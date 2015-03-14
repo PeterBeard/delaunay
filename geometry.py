@@ -8,20 +8,17 @@ import math
 #	Raises a ValueError exception if the inputs aren't 2-tuples with numerical values
 #	Returns a value representing the distance between the two points
 def distance(a, b):
-	# Make sure both values are 2-tuples
-	if len(a) != 2 or len(b) != 2:
-		raise ValueError('A and B must be 2-tuples')
-	# Make sure all values are numerical
 	try:
-		int(a[0])
-		int(a[1])
-		int(b[0])
-		int(b[1])
-	except:
-		raise ValueError('All values must be numerical')
+		# Return the distance
+		return math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2)
+	except e:
+		# Make sure both values are 2-tuples
+		if len(a) != 2 or len(b) != 2:
+			raise ValueError('A and B must be 2-tuples')
+		else:
+			# Re-raise the original exception
+			raise e
 
-	# Return the distance
-	return math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2)
 
 # Find the midpoint of a line segment
 #	line is a 2-tuple of x,y coordinates, e.g. ((x1,y1),(x2,y2))
@@ -33,32 +30,36 @@ def midpoint(line):
 #	line is a 2-tuple of x,y coordinates, e.g. ((x1,y1),(x2,y2))
 #	Returns the slope of the line
 def slope(line):
-	# Raise an error if the input isn't a line segment
-	if len(line) != 2 or len(line[0]) != 2 or len(line[1]) != 2:
-		raise ValueError('Input is not a line segment ((x1, y1), (x2, y2))')
-	# Raise an error if both points are the same
-	if line[0] == line[1]:
-		raise ValueError('Both points are the same')
-	# Raise an error if dx = 0
-	if line[0][0] == line[1][0]:
-		raise ValueError('Line has infinite slope')
-	return (line[1][1] - line[0][1])/(line[1][0] - line[0][0])
+	try:
+		return (line[1][1] - line[0][1])/(line[1][0] - line[0][0])
+	except:
+		# Raise an error if the input isn't a line segment
+		if len(line) != 2 or len(line[0]) != 2 or len(line[1]) != 2:
+			raise ValueError('Input is not a line segment ((x1, y1), (x2, y2))')
+		# Raise an error if both points are the same
+		if line[0] == line[1]:
+			raise ValueError('Both points are the same')
+		# Raise an error if dx = 0
+		if line[0][0] == line[1][0]:
+			raise ValueError('Line has infinite slope')
 
 # Find the slope of a line perpendicular to a line segment
 #	line is a 2-tuple of x,y coordinates, e.g. ((x1,y1),(x2,y2))
 #	Returns the slope of the perpendicular line
 def perp_slope(line):
-	# Raise an error if the input isn't a line segment
-	if len(line) != 2 or len(line[0]) != 2 or len(line[1]) != 2:
-		raise ValueError('Input is not a line segment ((x1, y1), (x2, y2))')
-	# Raise an error if both points are the same
-	if line[0] == line[1]:
-		raise ValueError('Both points are the same')
-	# Raise an error if dy = 0
-	if line[0][1] == line[1][1]:
-		raise ValueError('Line has zero slope')
-	# Perpendicular slppe is the negative reciprocal of the slope, i.e. -dx/dy
-	return -1*(line[1][0] - line[0][0])/(line[1][1] - line[0][1])
+	try:
+		# Perpendicular slppe is the negative reciprocal of the slope, i.e. -dx/dy
+		return -1*(line[1][0] - line[0][0])/(line[1][1] - line[0][1])
+	except:
+		# Raise an error if the input isn't a line segment
+		if len(line) != 2 or len(line[0]) != 2 or len(line[1]) != 2:
+			raise ValueError('Input is not a line segment ((x1, y1), (x2, y2))')
+		# Raise an error if both points are the same
+		if line[0] == line[1]:
+			raise ValueError('Both points are the same')
+		# Raise an error if dy = 0
+		if line[0][1] == line[1][1]:
+			raise ValueError('Line has zero slope')
 
 # Convert a line from point-slope form to y-intercept form
 #	m is the slope of the line
@@ -73,6 +74,12 @@ def point_slope_to_y_intercept(m, p):
 def is_vertical(l):
 	# The line is vertical if dx = 0
 	return l[0][0] == l[1][0]
+
+# Determine whether a line is horizontal
+#	l is a line represented by two x,y coordinates
+def is_horizontal(l):
+	# The line is horizontal if dy = 0
+	return l[0][1] == l[1][1]
 
 # Find the intersection of two lines
 #	a is a line defined by its slope and y-intercept, e.g. (m, b)
@@ -174,19 +181,17 @@ def triangle_from_edge_point(edge, point):
 #	t is a triangle defined by three vertices, each of which is an x,y coordinate pair, e.g. ((x1,y1),(x2,y2),(x3,y3))
 #	Returns a triangle defined by three edges consisting of a pair of x,y coordinates, e.g. (((x1,y2),(x2,y2)), ((x2,y2),(x3,y3)), etc)
 def vertices_to_edges(t):
-	edges = []
-	for i in range(0,3):
-		edges.append((t[i-1], t[i]))
-	return edges
+	return (
+		(t[-1], t[0]),
+		(t[0], t[1]),
+		(t[1], t[2])
+	)
 
 # Convert an edge definition of a triangle to a vertex definition
 #	t is a triangle defined by three edges, each of which is a pair of x,y coordinates
 #	Returns a triangle defined by three x,y coordinate vertices
 def edges_to_vertices(t):
-	vertices = []
-	for i in range(0,3):
-		vertices.append(t[i][1])
-	return tuple(vertices)
+	return (t[0][1], t[1][1], t[2][1])
 
 # Determine whether the given triangle contains the given point
 #	t is a triangle defined by three pairs of x,y coordinates
@@ -217,10 +222,10 @@ def tri_contains_point(t, p):
 #	Returns an x,y coordiante pair describing the circumcenter of the triangle
 def tri_circumcenter(t):
 	# The circumcenter of the triangle is the point where the perpendicular bisectors of the sides intersect
-	# Define the sides
+	# Define the sides we care about
 	A = (t[0],t[1])
 	B = (t[1],t[2])
-	C = (t[2],t[0])
+
 	# Calculate the midpoints
 	mp_a = midpoint(A)
 	mp_b = midpoint(B)
@@ -230,7 +235,7 @@ def tri_circumcenter(t):
 	# This assumes that the triangle is valid; i.e. no sides are parallel
 	if is_vertical(A):
 		ma = 0
-	elif slope(A) == 0:
+	elif is_horizontal(A):
 		# Find where B intersects a vertical line through mp_a
 		mb = perp_slope(B)
 		center = line_intersect_vertical(point_slope_to_y_intercept(mb, mp_b), mp_a)
@@ -241,7 +246,7 @@ def tri_circumcenter(t):
 	# Handle horizontal or vertical B
 	if is_vertical(B):
 		mb = 0
-	elif slope(B) == 0:
+	elif is_horizontal(B):
 		# Find where B intersects a vertical line through mp_a
 		ma = perp_slope(A)
 		center = line_intersect_vertical(point_slope_to_y_intercept(ma, mp_a), mp_b)
@@ -430,18 +435,20 @@ def calculate_triangles(points):
 	# Add points to the graph one at a time
 	for p in points:
 		# Find the triangles that contain the point
-		invalid_triangles = []
+		invalid_triangles_vertices = []
+		invalid_triangles_edges = []
 		for t in graph:
 			if tri_circle_contains_point(t, p):
 				# Add the triangle to the list
-				invalid_triangles.append(vertices_to_edges(t))
+				invalid_triangles_edges.append(vertices_to_edges(t))
+				invalid_triangles_vertices.append(t)
 		# There is a polygonal hole around the new point. Find its edges
 		hole = []
-		for t in invalid_triangles:
+		for t in invalid_triangles_edges:
 			for e in t:
 				# Make sure the edge is unique
 				unique = True
-				for u in invalid_triangles:
+				for u in invalid_triangles_edges:
 					# Tried using reversed(e), but it returns an iterable and not a tuple
 					if (e in u or e[::-1] in u) and u != t:
 						unique = False
@@ -450,11 +457,10 @@ def calculate_triangles(points):
 				if unique:
 					hole.append(e)
 		# Delete the invalid triangles from the graph
-		count = 0
-		for t in invalid_triangles:
+		for t in invalid_triangles_vertices:
 			i = 0
 			while i < len(graph):
-				if edges_to_vertices(t) == graph[i]:
+				if t == graph[i]:
 					del graph[i]
 					break
 				i += 1
