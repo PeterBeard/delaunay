@@ -167,12 +167,21 @@ parser.add_option('-d', '--decluster', dest='decluster', action='store_true', he
 
 # Set the size of the image
 npoints = options.n_points
+# Make sure the gradient name exists (if applicable)
 gname = options.gradient
 if gname not in gradient and not options.image:
 	print 'Invalid gradient name'
 	sys.exit(64)
 if options.image:
+	# Warn if a gradient was selected as well as an image
+	if options.gradient:
+		print 'Image supercedes gradient; gradient selection ignored'
 	image = pygame.image.load(options.image)
+
+# Make sure width and height are positive
+if options.width <= 0 or options.height <= 0:
+	print 'Width and height must be greater than zero.'
+	sys.exit(64)
 
 # If an image is being used as the background, set the canvas size to match it
 if image:
@@ -185,11 +194,15 @@ screen = pygame.display.set_mode(size)
 
 # Generate points on this portion of the canvas
 scale = 1.25
-
 points = generate_points(npoints, size, scale, options.decluster)
 
 # Calculate the triangulation
 triangulation = geometry.calculate_triangles(points)
+
+# Failed to find a triangulation
+if not triangulation:
+	print 'Failed to find a triangulation.'
+	sys.exit(1)
 
 # Translate the points to screen coordinates
 trans_triangulation = []
