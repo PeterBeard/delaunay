@@ -11,13 +11,13 @@ def distance(a, b):
 	try:
 		# Return the distance
 		return math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2)
-	except e:
+	except:
 		# Make sure both values are 2-tuples
 		if len(a) != 2 or len(b) != 2:
 			raise ValueError('A and B must be 2-tuples')
 		else:
 			# Re-raise the original exception
-			raise e
+			raise
 
 
 # Find the midpoint of a line segment
@@ -86,9 +86,13 @@ def is_horizontal(l):
 #	b is a line defined the same way as a
 #	Returns an x,y coordinate pair
 def lines_intersection(a, b):
-	x = (b[1] - a[1])/(a[0] - b[0])
-	y = a[0] * x + a[1]
-	return (x,y)
+	try:
+		x = (b[1] - a[1])/(a[0] - b[0])
+		y = a[0] * x + a[1]
+		return (x,y)
+	except:
+		# Lines are either parallel or invalid. Either way, the intersection doesn't exist
+		return None
 
 # Find the intersection of a line with a vertical line
 #	a is a line defined by its slope and y-intercept, e.g. (m, b)
