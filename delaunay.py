@@ -2,10 +2,10 @@
 
 import Image, ImageDraw
 import random
-import geometry
 import sys
 from optparse import OptionParser
 from math import sqrt
+from geometry import calculate_triangles, tri_centroid
 
 # Convert Cartesian coordinates to screen coordinates
 #	points is a list of points of the form (x,y)
@@ -46,10 +46,12 @@ def generate_points(n_points, area, scale=1, decluster=True):
 		cluster_fraction = 2
 	else:
 		cluster_fraction = 1
+
 	points = []
 	n_extra_points = int(cluster_fraction*n_points)
 	for i in range(0,n_extra_points):
 		points.append((int((1-scale)/2*area[0])+random.randrange(int(area[0]*scale)), int((1-scale)/2*area[1])+random.randrange(int(area[1]*scale))))
+
 	# De-cluster the points
 	if decluster:
 		# Sort the points by distance to the nearest point
@@ -58,16 +60,18 @@ def generate_points(n_points, area, scale=1, decluster=True):
 			d = None
 			# Find the minimum distance to another point
 			for q in points:
-				#q_d = geometry.distance(p, q)
+				if q == p:
+					break
 				q_d = sqrt((p[0]-q[0])**2+(p[1]-q[1])**2)
 				if not d or q_d < d:
 					d = q_d
-			# Insert the distance-point pair into the array at the correct position
-			if len(sorted_points) == 0:
-				sorted_points.append((d, p))
-			else:
+			if d:
+				# Insert the distance-point pair into the array at the correct position
+				#if len(sorted_points) == 0:
+				if not sorted_points:
+					sorted_points.append((d, p))
 				# Does it go at the end of the list?
-				if d > sorted_points[-1][0]:
+				elif d > sorted_points[-1][0]:
 					sorted_points.append((d, p))
 				else:
 					i = 0
@@ -200,7 +204,7 @@ scale = 1.25
 points = generate_points(npoints, size, scale, options.decluster)
 
 # Calculate the triangulation
-triangulation = geometry.calculate_triangles(points)
+triangulation = calculate_triangles(points)
 
 # Failed to find a triangulation
 if not triangulation:
@@ -219,7 +223,7 @@ colors = []
 if options.image:
 	pixels = background_image.load()
 	for t in trans_triangulation:
-		centroid = geometry.tri_centroid(t)
+		centroid = tri_centroid(t)
 		# Truncate the coordinates to fit within the boundaries of the image
 		int_centroid = [centroid[0], centroid[1]]
 		if centroid[0] < 0:
@@ -239,11 +243,10 @@ if options.image:
 else:
 	# If a gradient was selected, use that to assign colors to the triangles
 	# The size of the screen
-	#s = geometry.distance((0,0), size)
 	s = sqrt(size[0]**2+size[1]**2)
 	for t in triangulation:
 		# The color is determined by the location of the centroid
-		c = geometry.tri_centroid(t)
+		c = tri_centroid(t)
 		frac = sqrt(c[0]**2+c[1]**2)/s
 		#frac = c[0]/size[0]
 		colors.append(calculate_color(gradient[gname], frac))
