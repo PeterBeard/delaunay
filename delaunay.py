@@ -5,6 +5,7 @@ import random
 import geometry
 import sys
 from optparse import OptionParser
+from math import sqrt
 
 # Convert Cartesian coordinates to screen coordinates
 #	points is a list of points of the form (x,y)
@@ -57,7 +58,8 @@ def generate_points(n_points, area, scale=1, decluster=True):
 			d = None
 			# Find the minimum distance to another point
 			for q in points:
-				q_d = geometry.distance(p, q)
+				#q_d = geometry.distance(p, q)
+				q_d = sqrt((p[0]-q[0])**2+(p[1]-q[1])**2)
 				if not d or q_d < d:
 					d = q_d
 			# Insert the distance-point pair into the array at the correct position
@@ -237,11 +239,12 @@ if options.image:
 else:
 	# If a gradient was selected, use that to assign colors to the triangles
 	# The size of the screen
-	s = geometry.distance((0,0), size)
+	#s = geometry.distance((0,0), size)
+	s = sqrt(size[0]**2+size[1]**2)
 	for t in triangulation:
 		# The color is determined by the location of the centroid
 		c = geometry.tri_centroid(t)
-		frac = geometry.distance((0,0), c)/s
+		frac = sqrt(c[0]**2+c[1]**2)/s
 		#frac = c[0]/size[0]
 		colors.append(calculate_color(gradient[gname], frac))
 

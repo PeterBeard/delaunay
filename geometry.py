@@ -1,23 +1,6 @@
 # Calculate the Delaunay triangulation of a set of points
 from __future__ import division
-import math
-
-# Calculate the Euclidean distance between two points, a and b
-#	Each point is a 2-tuple of values, x and y
-#	The distance is defined as sqrt((x1-x2)^2 + (y1-y2)^2)
-#	Raises a ValueError exception if the inputs aren't 2-tuples with numerical values
-#	Returns a value representing the distance between the two points
-def distance(a, b):
-	try:
-		# Return the distance
-		return math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2)
-	except:
-		# Make sure both values are 2-tuples
-		if len(a) != 2 or len(b) != 2:
-			raise ValueError('A and B must be 2-tuples')
-		else:
-			# Re-raise the original exception
-			raise
+from math import sqrt, atan2
 
 # Find the midpoint of a line segment
 #	line is a 2-tuple of x,y coordinates, e.g. ((x1,y1),(x2,y2))
@@ -200,7 +183,8 @@ def edges_to_vertices(t):
 #	p is an x,y coordinate pair
 #	Returns True if p lies within the circle and false otherwise
 def circle_contains_point(circle, p):
-	return distance(circle[0], p) <= circle[1]
+	#return distance(circle[0], p) <= circle[1]
+	return sqrt((circle[0][0]-p[0])**2 + (circle[0][1]-p[1])**2) <= circle[1]
 
 # Determine whether the given triangle contains the given point
 #	t is a triangle defined by three pairs of x,y coordinates
@@ -285,11 +269,16 @@ def tri_circumcircle(t):
 	B = (t[1],t[2])
 	C = (t[2],t[0])
 	# The radius of the circumcircle is given by this formula of the lengths of the sides
+	'''
 	a = distance(A[0], A[1])
 	b = distance(B[0], B[1])
 	c = distance(C[0], C[1])
+	'''
+	a = sqrt((A[0][0]-A[1][0])**2 + (A[0][1]-A[1][1])**2)
+	b = sqrt((B[0][0]-B[1][0])**2 + (B[0][1]-B[1][1])**2)
+	c = sqrt((C[0][0]-C[1][0])**2 + (C[0][1]-C[1][1])**2)
 
-	radius = (a*b*c)/math.sqrt((a+b+c)*(b+c-a)*(c+a-b)*(a+b-c))
+	radius = (a*b*c)/sqrt((a+b+c)*(b+c-a)*(c+a-b)*(a+b-c))
 	return (center, radius)
 
 # Determine whether the circumcircle of the given triangle contains the given point
@@ -318,7 +307,7 @@ def tri_share_vertices(t1, t2):
 #	b is also a point
 #	Returns the angle between a and b in radians
 def angle(a, b):
-	return math.atan2(b[1]-a[1], b[0]-a[0])
+	return atan2(b[1]-a[1], b[0]-a[0])
 
 # Calculates the cross product of three points
 #	a is a point represented by a pair of x,y coordinates
@@ -451,7 +440,9 @@ def calculate_triangles(points):
 		invalid_triangles_edges = []
 		for pair in graph:
 			t = pair[0]
-			if circle_contains_point(pair[1], p):
+			c = pair[1]
+			#if circle_contains_point(pair[1], p):
+			if sqrt((c[0][0]-p[0])**2+(c[0][1]-p[1])**2) <= c[1]:
 				# Add the triangle to the list
 				invalid_triangles_edges.append(vertices_to_edges(t))
 				invalid_triangles_vertices.append(t)
