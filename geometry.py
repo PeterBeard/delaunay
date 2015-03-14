@@ -19,7 +19,6 @@ def distance(a, b):
 			# Re-raise the original exception
 			raise
 
-
 # Find the midpoint of a line segment
 #	line is a 2-tuple of x,y coordinates, e.g. ((x1,y1),(x2,y2))
 #	Returns an x,y coordinate pair
@@ -480,7 +479,7 @@ def calculate_triangles(points):
 				i += 1
 		# Re-triangulate the hole made by the new point
 		for e in hole:
-			if p not in e:
+			if e[0] != p and e[1] != p:
 				t = triangle_from_edge_point(e, p)
 				graph.append((t, tri_circumcircle(t)))
 	# Delete the supertriangle from the graph
