@@ -5,7 +5,7 @@ import random
 import sys
 from optparse import OptionParser
 from math import sqrt
-from geometry import calculate_triangles, tri_centroid
+from geometry import delaunay_triangulation, tri_centroid
 
 # Convert Cartesian coordinates to screen coordinates
 #	points is a list of points of the form (x,y)
@@ -206,7 +206,7 @@ scale = 1.25
 points = generate_points(npoints, size, scale, options.decluster)
 
 # Calculate the triangulation
-triangulation = calculate_triangles(points)
+triangulation = delaunay_triangulation(points)
 
 # Failed to find a triangulation
 if not triangulation:

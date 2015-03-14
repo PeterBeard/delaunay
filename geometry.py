@@ -396,7 +396,7 @@ def enclosing_triangle(points):
 # Calculate the Delaunay triangulation of a set of points using the Bowyer-Watson algorithm
 #	points is a list of 2-tuples of x,y coordinates
 #	Returns a list of triangles represented as triplets of x,y coordinates (i.e. t = ( ((x11,y11), (x12,y12), (x13,y13)), ((x21,y21), ...) ))
-def calculate_triangles(points):
+def delaunay_triangulation(points):
 	# Less than three points is impossible to triangulate
 	if len(points) < 3:
 		raise ValueError('Need at least three points to triangulate')
