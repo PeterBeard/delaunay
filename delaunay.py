@@ -1,3 +1,5 @@
+#!/bin/python
+
 import pygame
 import random
 import geometry
