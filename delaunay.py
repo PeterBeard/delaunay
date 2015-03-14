@@ -1,6 +1,6 @@
 #!/bin/python
 
-import pygame
+import Image, ImageDraw
 import random
 import geometry
 import sys
@@ -90,17 +90,15 @@ def generate_points(n_points, area, scale=1, decluster=True):
 
 
 # Draw a set of polygons to the screen using the given colors
-#	polys is a list of polygons defined by their vertices as x,y coordinates
 #	colors is a list of RGB coordinates, one per polygon
-def draw_polys(colors, polys, surface, draw_outlines=False, outline_color=(255,255,255)):
-	for i in range(0, len(polys)):
-		pygame.draw.polygon(surface, colors[i], polys[i])
+#	polys is a list of polygons defined by their vertices as x,y coordinates
+def draw_polys(draw, colors, polys, draw_outlines=False, outline_color=(255,255,255)):
 	if draw_outlines:
-		for p in polys:
-			pygame.draw.aalines(screen, outline_color, True, p)
-		
-
-pygame.init()
+		for i in range(0, len(polys)):
+			draw.polygon(polys[i], outline=outline_color, fill=colors[i])
+	else:
+		for i in range(0, len(polys)):
+			draw.polygon(polys[i], fill=colors[i])
 
 point_radius = 5
 poly_thickness = 2
@@ -173,11 +171,13 @@ gname = options.gradient
 if gname not in gradient and not options.image:
 	print 'Invalid gradient name'
 	sys.exit(64)
+
 if options.image:
 	# Warn if a gradient was selected as well as an image
 	if options.gradient:
 		print 'Image supercedes gradient; gradient selection ignored'
-	image = pygame.image.load(options.image)
+	background_image = Image.open(options.image)
+
 
 # Make sure width and height are positive
 if options.width <= 0 or options.height <= 0:
@@ -185,13 +185,14 @@ if options.width <= 0 or options.height <= 0:
 	sys.exit(64)
 
 # If an image is being used as the background, set the canvas size to match it
-if image:
-	size = image.get_size()
+if options.image:
+	size = background_image.size
 else:
 	size = (options.width, options.height)
 
-# Set up the screen
-screen = pygame.display.set_mode(size)
+image = Image.new('RGB', size, 'white')
+# Get a draw object
+draw = ImageDraw.Draw(image)
 
 # Generate points on this portion of the canvas
 scale = 1.25
@@ -214,7 +215,8 @@ for t in triangulation:
 colors = []
 # If an image was selected, assign colors to the triangles based on the color of the image at the centroid of each triangle
 # Note that we translate the centroid to screen coordinates before sampling the image
-if image:
+if options.image:
+	pixels = background_image.load()
 	for t in trans_triangulation:
 		centroid = geometry.tri_centroid(t)
 		# Truncate the coordinates to fit within the boundaries of the image
@@ -232,7 +234,7 @@ if image:
 		else:
 			int_centroid[1] = int(centroid[1])
 
-		colors.append(image.get_at(int_centroid))
+		colors.append(pixels[int_centroid[0], int_centroid[1]])
 else:
 	# If a gradient was selected, use that to assign colors to the triangles
 	# The size of the screen
@@ -244,14 +246,9 @@ else:
 		#frac = c[0]/size[0]
 		colors.append(calculate_color(gradient[gname], frac))
 
-# Draw
-# Blank the screen
-screen.fill(bg_color)
 # Draw the triangulation
-draw_polys(colors, trans_triangulation, screen, options.lines)
-# Refresh the display
-pygame.display.flip()
+draw_polys(draw, colors, trans_triangulation, options.lines)
 # Write the image to a file
-pygame.image.save(screen, options.filename)
+image.save(options.filename)
 print 'Image saved to %s' % options.filename
 sys.exit(0)
