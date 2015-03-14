@@ -178,14 +178,6 @@ def vertices_to_edges(t):
 def edges_to_vertices(t):
 	return (t[0][1], t[1][1], t[2][1])
 
-# Determine whether a circle contains a given point
-#	circle is a 2-tuple containing the center of the circle (x,y) and its radius
-#	p is an x,y coordinate pair
-#	Returns True if p lies within the circle and false otherwise
-def circle_contains_point(circle, p):
-	#return distance(circle[0], p) <= circle[1]
-	return sqrt((circle[0][0]-p[0])**2 + (circle[0][1]-p[1])**2) <= circle[1]
-
 # Determine whether the given triangle contains the given point
 #	t is a triangle defined by three pairs of x,y coordinates
 #	p is a point represented by a pair of x,y coordinates
@@ -269,26 +261,12 @@ def tri_circumcircle(t):
 	B = (t[1],t[2])
 	C = (t[2],t[0])
 	# The radius of the circumcircle is given by this formula of the lengths of the sides
-	'''
-	a = distance(A[0], A[1])
-	b = distance(B[0], B[1])
-	c = distance(C[0], C[1])
-	'''
 	a = sqrt((A[0][0]-A[1][0])**2 + (A[0][1]-A[1][1])**2)
 	b = sqrt((B[0][0]-B[1][0])**2 + (B[0][1]-B[1][1])**2)
 	c = sqrt((C[0][0]-C[1][0])**2 + (C[0][1]-C[1][1])**2)
 
 	radius = (a*b*c)/sqrt((a+b+c)*(b+c-a)*(c+a-b)*(a+b-c))
 	return (center, radius)
-
-# Determine whether the circumcircle of the given triangle contains the given point
-#	t is a triangle defined by three pairs of x,y coordinates
-#	p is a point represented by a pair of x,y coordinates
-def tri_circle_contains_point(t, p):
-	# Get the circumcircle of the triangle
-	circle = tri_circumcircle(t)
-	# Determine whether the point is within the circle
-	return circle_contains_point(circle, p)
 
 # Determine whether two triangles have any vertices in common
 #	t1 and t2 are two vertex-defined triangles
@@ -430,6 +408,7 @@ def calculate_triangles(points):
 	supertriangle = scale_tri(enclosing_triangle(points), scale_factor)
 	if not supertriangle:
 		return None
+
 	# The graph is a list of 2-tuples; the first element of each 2-tuple is a triangle and the second element is its circumcircle.
 	# This saves us considerable time in recalculating the circles
 	graph = [(supertriangle, tri_circumcircle(supertriangle))]
@@ -440,9 +419,9 @@ def calculate_triangles(points):
 		invalid_triangles_edges = []
 		for pair in graph:
 			t = pair[0]
-			c = pair[1]
-			#if circle_contains_point(pair[1], p):
-			if sqrt((c[0][0]-p[0])**2+(c[0][1]-p[1])**2) <= c[1]:
+			center = pair[1]
+
+			if sqrt((center[0][0]-p[0])**2+(center[0][1]-p[1])**2) <= center[1]:
 				# Add the triangle to the list
 				invalid_triangles_edges.append(vertices_to_edges(t))
 				invalid_triangles_vertices.append(t)
