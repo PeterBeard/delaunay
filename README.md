@@ -1,2 +1,31 @@
 # delaunay
-Python script for drawing triangles
+Python script for calculating and drawing triangular meshes. The mesh is the Delaunay triangulation of a random assortment of points.
+
+Usage
+-----
+```
+Usage: delaunay.py [options]
+
+Options:
+  -h, --help            show this help message and exit
+  -o FILENAME, --output=FILENAME
+                        The filename to write the image to. Supported
+                        filetyles are BMP, TGA, PNG, and JPEG
+  -n N_POINTS, --npoints=N_POINTS
+                        The number of points to use when generating the
+                        triangulation.
+  -x WIDTH, --width=WIDTH
+                        The width of the image.
+  -y HEIGHT, --height=HEIGHT
+                        The height of the image.
+  -g GRADIENT, --gradient=GRADIENT
+                        The name of the gradient to use.
+  -i IMAGE, --image-file=IMAGE
+                        An image file to use when calculating triangle colors.
+                        Image dimensions will override dimensions set by -x
+                        and -y.
+  -l, --lines           If enabled, draw lines along the triangle edges.
+  -d, --decluster       If enabled, try to avoid generating clusters of points
+                        in the triangulation. This will significantly slow
+                        down point generation.
+```
