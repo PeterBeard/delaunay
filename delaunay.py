@@ -84,7 +84,6 @@ def generate_points(n_points, area, scale=1, decluster=True):
 	points.append((area[0]+10, -300))
 	points.append((area[0]+300, area[1]+10))
 	points.append((-100, area[1]+300))
-	print len(points)
 	return points
 
 
