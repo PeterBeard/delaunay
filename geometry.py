@@ -102,7 +102,6 @@ def line_intersect_vertical(a, p):
 	x = p[0]
 	y = a[0] * x + a[1]
 	return (x,y)
-	
 
 # Calculate the vertices of a triangle given three line segments along its sides
 #	a is a line segment represented by a 2-tuple of x,y coordinates, i.e. ((x1,y1), (x2,y2))
@@ -197,6 +196,13 @@ def vertices_to_edges(t):
 def edges_to_vertices(t):
 	return (t[0][1], t[1][1], t[2][1])
 
+# Determine whether a circle contains a given point
+#	circle is a 2-tuple containing the center of the circle (x,y) and its radius
+#	p is an x,y coordinate pair
+#	Returns True if p lies within the circle and false otherwise
+def circle_contains_point(circle, p):
+	return distance(circle[0], p) <= circle[1]
+
 # Determine whether the given triangle contains the given point
 #	t is a triangle defined by three pairs of x,y coordinates
 #	p is a point represented by a pair of x,y coordinates
@@ -283,6 +289,7 @@ def tri_circumcircle(t):
 	a = distance(A[0], A[1])
 	b = distance(B[0], B[1])
 	c = distance(C[0], C[1])
+
 	radius = (a*b*c)/math.sqrt((a+b+c)*(b+c-a)*(c+a-b)*(a+b-c))
 	return (center, radius)
 
@@ -293,7 +300,7 @@ def tri_circle_contains_point(t, p):
 	# Get the circumcircle of the triangle
 	circle = tri_circumcircle(t)
 	# Determine whether the point is within the circle
-	return distance(circle[0], p) <= circle[1]
+	return circle_contains_point(circle, p)
 
 # Determine whether two triangles have any vertices in common
 #	t1 and t2 are two vertex-defined triangles
@@ -435,14 +442,17 @@ def calculate_triangles(points):
 	supertriangle = scale_tri(enclosing_triangle(points), scale_factor)
 	if not supertriangle:
 		return None
-	graph = [supertriangle]
+	# The graph is a list of 2-tuples; the first element of each 2-tuple is a triangle and the second element is its circumcircle.
+	# This saves us considerable time in recalculating the circles
+	graph = [(supertriangle, tri_circumcircle(supertriangle))]
 	# Add points to the graph one at a time
 	for p in points:
 		# Find the triangles that contain the point
 		invalid_triangles_vertices = []
 		invalid_triangles_edges = []
-		for t in graph:
-			if tri_circle_contains_point(t, p):
+		for pair in graph:
+			t = pair[0]
+			if circle_contains_point(pair[1], p):
 				# Add the triangle to the list
 				invalid_triangles_edges.append(vertices_to_edges(t))
 				invalid_triangles_vertices.append(t)
@@ -464,21 +474,26 @@ def calculate_triangles(points):
 		for t in invalid_triangles_vertices:
 			i = 0
 			while i < len(graph):
-				if t == graph[i]:
+				if t == graph[i][0]:
 					del graph[i]
 					break
 				i += 1
 		# Re-triangulate the hole made by the new point
 		for e in hole:
-			graph.append(triangle_from_edge_point(e, p))
+			if p not in e:
+				t = triangle_from_edge_point(e, p)
+				graph.append((t, tri_circumcircle(t)))
 	# Delete the supertriangle from the graph
 	i = 0
 	while i < len(graph):
-		if tri_share_vertices(graph[i], supertriangle):
+		if tri_share_vertices(graph[i][0], supertriangle):
 			del graph[i]
 			i -= 1
 		i += 1
 
+	# Clean up the graph data structure, removing all of the circumcircles
+	clean_graph = [t[0] for t in graph]
+
 	# Return the graph
-	return graph
+	return clean_graph
 
