@@ -154,8 +154,6 @@ gradient = {
 parser = OptionParser()
 parser.set_defaults(filename='triangles.png')
 parser.set_defaults(n_points=100)
-parser.set_defaults(width=1920)
-parser.set_defaults(height=1080)
 
 parser.add_option('-o', '--output', dest='filename', type='string', help='The filename to write the image to. Supported filetyles are BMP, TGA, PNG, and JPEG')
 parser.add_option('-n', '--npoints', dest='n_points', type='int', help='The number of points to use when generating the triangulation.')
@@ -169,8 +167,9 @@ parser.add_option('-d', '--decluster', dest='decluster', action='store_true', he
 # Parse the arguments
 (options, args) = parser.parse_args()
 
-# Set the size of the image
+# Set the number of points to use
 npoints = options.n_points
+
 # Make sure the gradient name exists (if applicable)
 gname = options.gradient
 if gname not in gradient and not options.image:
@@ -184,15 +183,18 @@ if options.image:
 	background_image = Image.open(options.image)
 
 
-# Make sure width and height are positive
-if options.width <= 0 or options.height <= 0:
-	print 'Width and height must be greater than zero.'
-	sys.exit(64)
-
 # If an image is being used as the background, set the canvas size to match it
 if options.image:
+	# Warn if overriding user-defined width and height
+	if options.width or options.height:
+		print 'Image dimensions supercede specified width and height'
 	size = background_image.size
 else:
+	# Make sure width and height are positive
+	if options.width <= 0 or options.height <= 0:
+		print 'Width and height must be greater than zero.'
+	sys.exit(64)
+
 	size = (options.width, options.height)
 
 image = Image.new('RGB', size, 'white')
