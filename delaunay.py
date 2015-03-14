@@ -36,6 +36,58 @@ def calculate_color(grad, val):
 
 	return (r, g, b)
 
+# Generate a random set of points to triangulate
+def generate_points(n_points, area, scale=1, decluster=True):
+	# Generate random points -- note that we generate extra_points so we can de-cluster later
+	if decluster:
+		cluster_fraction = 2
+	else:
+		cluster_fraction = 1
+	points = []
+	n_extra_points = int(cluster_fraction*n_points)
+	for i in range(0,n_extra_points):
+		points.append((int((1-scale)/2*area[0])+random.randrange(int(area[0]*scale)), int((1-scale)/2*area[1])+random.randrange(int(area[1]*scale))))
+	# De-cluster the points
+	if decluster:
+		# Sort the points by distance to the nearest point
+		sorted_points = []
+		for p in points:
+			d = None
+			# Find the minimum distance to another point
+			for q in points:
+				q_d = geometry.distance(p, q)
+				if not d or q_d < d:
+					d = q_d
+			# Insert the distance-point pair into the array at the correct position
+			if len(sorted_points) == 0:
+				sorted_points.append((d, p))
+			else:
+				# Does it go at the end of the list?
+				if d > sorted_points[-1][0]:
+					sorted_points.append((d, p))
+				else:
+					i = 0
+					while i < len(sorted_points):
+						if sorted_points[i][0] < d:
+							i += 1
+						else:
+							sorted_points.insert(i, (d, p))
+							break
+		# Remove the most clustered points
+		for i in range(0,(n_extra_points - n_points)):
+			del sorted_points[0]
+		# Put the remaining points back into a flat list
+		points = [p[1] for p in sorted_points]
+	
+	# Always include four points beyond the corners of the screen to make sure the triangulation covers the edges
+	points.append((-300,-10))
+	points.append((area[0]+10, -300))
+	points.append((area[0]+300, area[1]+10))
+	points.append((-100, area[1]+300))
+	print len(points)
+	return points
+
+
 # Draw a set of polygons to the screen using the given colors
 #	polys is a list of polygons defined by their vertices as x,y coordinates
 #	colors is a list of RGB coordinates, one per polygon
@@ -107,7 +159,8 @@ parser.add_option('-x', '--width', dest='width', type='int', help='The width of 
 parser.add_option('-y', '--height', dest='height', type='int', help='The height of the image.')
 parser.add_option('-g', '--gradient', dest='gradient', type='string', help='The name of the gradient to use.')
 parser.add_option('-i', '--image-file', dest='image', type='string', help='An image file to use when calculating triangle colors. Image dimensions will override dimensions set by -x and -y.')
-parser.add_option('-l', '--lines', dest='lines', action='store_true', help='Whether or not to draw lines along the triangle edges.')
+parser.add_option('-l', '--lines', dest='lines', action='store_true', help='If enabled, draw lines along the triangle edges.')
+parser.add_option('-d', '--decluster', dest='decluster', action='store_true', help='If enabled, try to avoid generating clusters of points in the triangulation. This will significantly slow down point generation.')
 
 # Parse the arguments
 (options, args) = parser.parse_args()
@@ -133,17 +186,7 @@ screen = pygame.display.set_mode(size)
 # Generate points on this portion of the canvas
 scale = 1.25
 
-# Always include four points beyond the corners of the screen to make sure the triangulation covers the edges
-points = [
-	(-300,-10),
-	(size[0]+10, -300),
-	(size[0]+300, size[1]+10),
-	(-100, size[1]+300)
-]
-
-# Generate random points
-for i in range(0,npoints):
-	points.append((int((1-scale)/2*size[0])+random.randrange(int(size[0]*scale)), int((1-scale)/2*size[1])+random.randrange(int(size[1]*scale))))
+points = generate_points(npoints, size, scale, options.decluster)
 
 # Calculate the triangulation
 triangulation = geometry.calculate_triangles(points)
