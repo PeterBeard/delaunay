@@ -161,6 +161,7 @@ parser.add_option('-x', '--width', dest='width', type='int', help='The width of 
 parser.add_option('-y', '--height', dest='height', type='int', help='The height of the image.')
 parser.add_option('-g', '--gradient', dest='gradient', type='string', help='The name of the gradient to use.')
 parser.add_option('-i', '--image-file', dest='image', type='string', help='An image file to use when calculating triangle colors. Image dimensions will override dimensions set by -x and -y.')
+parser.add_option('-k', '--darken', dest='darken_amount', type='int', help='If enabled, darken random triangles to make the pattern stand out more')
 parser.add_option('-l', '--lines', dest='lines', action='store_true', help='If enabled, draw lines along the triangle edges.')
 parser.add_option('-d', '--decluster', dest='decluster', action='store_true', help='If enabled, try to avoid generating clusters of points in the triangulation. This will significantly slow down point generation.')
 
@@ -172,11 +173,13 @@ npoints = options.n_points
 
 # Make sure the gradient name exists (if applicable)
 gname = options.gradient
-if gname not in gradient and not options.image:
+if not gname and not options.image:
+	print 'Must select either a gradient (-g) or input image (-i). See help for details.'
+	sys.exit(64)
+elif gname not in gradient and not options.image:
 	print 'Invalid gradient name'
 	sys.exit(64)
-
-if options.image:
+elif options.image:
 	# Warn if a gradient was selected as well as an image
 	if options.gradient:
 		print 'Image supercedes gradient; gradient selection ignored'
@@ -193,7 +196,7 @@ else:
 	# Make sure width and height are positive
 	if options.width <= 0 or options.height <= 0:
 		print 'Width and height must be greater than zero.'
-	sys.exit(64)
+		sys.exit(64)
 
 	size = (options.width, options.height)
 
@@ -252,6 +255,14 @@ else:
 		frac = sqrt(c[0]**2+c[1]**2)/s
 		#frac = c[0]/size[0]
 		colors.append(calculate_color(gradient[gname], frac))
+
+# Darken random triangles
+if options.darken_amount:
+	for i in range(0,len(colors)):
+		c = colors[i]
+		d = random.randrange(options.darken_amount)
+		darkened = (max(c[0]-d,0), max(c[1]-d,0), max(c[2]-d,0))
+		colors[i] = darkened
 
 # Draw the triangulation
 draw_polys(draw, colors, trans_triangulation, options.lines)
