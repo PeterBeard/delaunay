@@ -98,6 +98,8 @@ def generate_points(n_points, area, scale=1, decluster=True):
 # Draw a set of polygons to the screen using the given colors
 #	colors is a list of RGB coordinates, one per polygon
 #	polys is a list of polygons defined by their vertices as x,y coordinates
+#	draw_outlines is a boolean -- if true, draws outlines around the triangles
+#	outline_color is an RGB triplet describing the color of the outlines of the triangles (if drawn)
 def draw_polys(draw, colors, polys, draw_outlines=False, outline_color=(255,255,255)):
 	if draw_outlines:
 		for i in range(0, len(polys)):
@@ -106,10 +108,8 @@ def draw_polys(draw, colors, polys, draw_outlines=False, outline_color=(255,255,
 		for i in range(0, len(polys)):
 			draw.polygon(polys[i], fill=colors[i])
 
-point_radius = 5
-poly_thickness = 2
-
-bg_color = (255,255,255)
+# Anti-aliasing amount -- multiplies the screen dimensions by this value when supersampling
+aa_amount = 4
 # Some gradients
 gradient = {
 'sunshine':(
@@ -155,13 +155,17 @@ parser = OptionParser()
 parser.set_defaults(filename='triangles.png')
 parser.set_defaults(n_points=100)
 
+# Value options
 parser.add_option('-o', '--output', dest='filename', type='string', help='The filename to write the image to. Supported filetyles are BMP, TGA, PNG, and JPEG')
 parser.add_option('-n', '--npoints', dest='n_points', type='int', help='The number of points to use when generating the triangulation.')
 parser.add_option('-x', '--width', dest='width', type='int', help='The width of the image.')
 parser.add_option('-y', '--height', dest='height', type='int', help='The height of the image.')
 parser.add_option('-g', '--gradient', dest='gradient', type='string', help='The name of the gradient to use.')
 parser.add_option('-i', '--image-file', dest='image', type='string', help='An image file to use when calculating triangle colors. Image dimensions will override dimensions set by -x and -y.')
-parser.add_option('-k', '--darken', dest='darken_amount', type='int', help='If enabled, darken random triangles to make the pattern stand out more')
+parser.add_option('-k', '--darken', dest='darken_amount', type='int', help='Darken random triangles my the given amount to make the pattern stand out more')
+
+# Flags
+parser.add_option('-a', '--antialias', dest='antialias', action='store_true', help='If enabled, draw the image at 4x resolution and downsample to reduce aliasing.')
 parser.add_option('-l', '--lines', dest='lines', action='store_true', help='If enabled, draw lines along the triangle edges.')
 parser.add_option('-d', '--decluster', dest='decluster', action='store_true', help='If enabled, try to avoid generating clusters of points in the triangulation. This will significantly slow down point generation.')
 
@@ -200,9 +204,6 @@ else:
 
 	size = (options.width, options.height)
 
-image = Image.new('RGB', size, 'white')
-# Get a draw object
-draw = ImageDraw.Draw(image)
 
 # Generate points on this portion of the canvas
 scale = 1.25
@@ -264,9 +265,25 @@ if options.darken_amount:
 		darkened = (max(c[0]-d,0), max(c[1]-d,0), max(c[2]-d,0))
 		colors[i] = darkened
 
+# Set up for anti-aliasing
+if options.antialias:
+	# Scale the image dimensions
+	size = (size[0] * aa_amount, size[1] * aa_amount)
+	# Scale the graph
+	trans_triangulation = [[tuple(map(lambda x:x*aa_amount, v)) for v in p] for p in trans_triangulation]
+
+# Create image object
+image = Image.new('RGB', size, 'white')
+# Get a draw object
+draw = ImageDraw.Draw(image)
 # Draw the triangulation
 draw_polys(draw, colors, trans_triangulation, options.lines)
+# Resample the image using the built-in Lanczos filter
+if options.antialias:
+	image = image.resize((size[0]/aa_amount, size[1]/aa_amount), Image.ANTIALIAS)
+
 # Write the image to a file
 image.save(options.filename)
 print 'Image saved to %s' % options.filename
 sys.exit(0)
+
