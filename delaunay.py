@@ -231,20 +231,11 @@ if options.image:
 	for t in trans_triangulation:
 		centroid = tri_centroid(t)
 		# Truncate the coordinates to fit within the boundaries of the image
-		int_centroid = [centroid[0], centroid[1]]
-		if centroid[0] < 0:
-			int_centroid[0] = 0
-		elif centroid[0] >= size[0]:
-			int_centroid[0] = size[0] - 1
-		else:
-			int_centroid[0] = int(centroid[0])
-		if centroid[1] < 0:
-			int_centroid[1] = 0
-		elif centroid[1] >= size[1]:
-			int_centroid[1] = size[1] - 1
-		else:
-			int_centroid[1] = int(centroid[1])
-
+		int_centroid = (
+			int(min(max(centroid[0], 0), size[0]-1)),
+			int(min(max(centroid[1], 0), size[1]-1))
+		)
+		# Get the color of the image at the centroid
 		colors.append(pixels[int_centroid[0], int_centroid[1]])
 else:
 	# If a gradient was selected, use that to assign colors to the triangles
@@ -254,7 +245,6 @@ else:
 		# The color is determined by the location of the centroid
 		c = tri_centroid(t)
 		frac = sqrt(c[0]**2+c[1]**2)/s
-		#frac = c[0]/size[0]
 		colors.append(calculate_color(gradient[gname], frac))
 
 # Darken random triangles
