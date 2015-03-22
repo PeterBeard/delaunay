@@ -42,6 +42,8 @@ def perp_slope(line):
 		# Raise an error if dy = 0
 		if line[0][1] == line[1][1]:
 			raise ValueError('Line has zero slope')
+		# Re-raise the original exception
+		raise
 
 # Convert a line from point-slope form to y-intercept form
 #	m is the slope of the line
@@ -390,8 +392,25 @@ def enclosing_triangle(points):
 								break
 						if contains_all:
 							return triangle
-	print 'Failed to find enclosing triangle for edges', edges
-	return None
+	# We couldn't find a bounding triangle, but we can still find a bounding rectangle and convert it to a triangle
+	xmin = min([p[0] for p in points])
+	xmax = max([p[0] for p in points])
+	ymin = min([p[1] for p in points])
+	ymax = max([p[1] for p in points])
+
+	# Use the bottom side as the base of the triangle and construct edges that pass through the two top points
+	top_left = (xmin-1, ymax+1)
+	top_right = (xmax+1, ymax+1)
+	# Calculate equations for the edges
+	left_edge = point_slope_to_y_intercept(1, top_left)
+	right_edge = point_slope_to_y_intercept(-1, top_right)
+	base = point_slope_to_y_intercept(0, (xmin-1, ymin-1))
+	# The vertices of the triangle are wherever the edges intersect
+	a = lines_intersection(left_edge, right_edge)
+	b = lines_intersection(base, left_edge)
+	c = lines_intersection(base, right_edge)
+
+	return (a, b, c)
 
 # Calculate the Delaunay triangulation of a set of points using the Bowyer-Watson algorithm
 #	points is a list of 2-tuples of x,y coordinates
