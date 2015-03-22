@@ -24,8 +24,15 @@ Options:
                         An image file to use when calculating triangle colors.
                         Image dimensions will override dimensions set by -x
                         and -y.
+  -k DARKEN_AMOUNT, --darken=DARKEN_AMOUNT
+                        Darken random triangles my the given amount to make
+                        the pattern stand out more
+  -a, --antialias       If enabled, draw the image at 4x resolution and
+                        downsample to reduce aliasing.
   -l, --lines           If enabled, draw lines along the triangle edges.
   -d, --decluster       If enabled, try to avoid generating clusters of points
                         in the triangulation. This will significantly slow
                         down point generation.
+  -r, --right           If enabled, generate right triangles rather than
+                        random ones.
 ```
