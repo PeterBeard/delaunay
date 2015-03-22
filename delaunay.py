@@ -109,8 +109,8 @@ def generate_grid_points(n_points, area):
 	n_points_x = ceil(sqrt(n_points))
 	n_points_y = ceil(sqrt(n_points))
 	
-	x_spacing = area[0]/n_points_x
-	y_spacing = area[1]/n_points_y
+	x_spacing = max(ceil(area[0]/n_points_x), 1)
+	y_spacing = max(ceil(area[1]/n_points_y), 1)
 
 	y = 0
 	while y <= area[1]+y_spacing:
