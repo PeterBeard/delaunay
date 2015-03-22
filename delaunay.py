@@ -4,7 +4,8 @@ import Image, ImageDraw
 import random
 import sys
 from optparse import OptionParser
-from math import sqrt
+from math import sqrt, ceil
+from fractions import gcd
 from geometry import delaunay_triangulation, tri_centroid
 
 # Convert Cartesian coordinates to screen coordinates
@@ -40,7 +41,12 @@ def calculate_color(grad, val):
 	return (r, g, b)
 
 # Generate a random set of points to triangulate
-def generate_points(n_points, area, scale=1, decluster=True):
+#	n_points is the number of points to generate
+#	area is a 2-tuple describing the boundaries of the field in x and y
+#	scale is a value that describes how much of the area to fill with points
+#	 -- values greater than 1 will result in points outside the area, values less than 1 result in a set of points bounded by a rectangle that's scale times the size of the given area
+#	decluster is a boolean flag - if True, extra points will be generated, the points will be sorted by distance to the nearest neighbor, and the extra points with the closest neighbors will be removed - this avoids clusters of points
+def generate_random_points(n_points, area, scale=1, decluster=True):
 	# Generate random points -- note that we generate extra_points so we can de-cluster later
 	if decluster:
 		cluster_fraction = 2
@@ -94,6 +100,28 @@ def generate_points(n_points, area, scale=1, decluster=True):
 	points.append((-100, area[1]+300))
 	return points
 
+# Generate a rectangular grid of points
+#	n_points is the number of points to generate
+#	area is a 2-tuple describing the boundaries of the field in x and y
+def generate_grid_points(n_points, area):
+	points = []
+	
+	# Find a number of points that will make a nice grid
+	n_points_x = ceil(sqrt(n_points))
+	n_points_y = ceil(sqrt(n_points))
+	
+	x_spacing = area[0]/n_points_x
+	y_spacing = area[1]/n_points_y
+
+	y = 0
+	while y <= area[1]+y_spacing:
+		x = 0
+		while x <= area[0]+x_spacing:
+			points.append((x, y))
+			x += x_spacing
+		y += y_spacing
+
+	return points
 
 # Draw a set of polygons to the screen using the given colors
 #	colors is a list of RGB coordinates, one per polygon
@@ -203,6 +231,7 @@ parser.add_option('-k', '--darken', dest='darken_amount', type='int', help='Dark
 parser.add_option('-a', '--antialias', dest='antialias', action='store_true', help='If enabled, draw the image at 4x resolution and downsample to reduce aliasing.')
 parser.add_option('-l', '--lines', dest='lines', action='store_true', help='If enabled, draw lines along the triangle edges.')
 parser.add_option('-d', '--decluster', dest='decluster', action='store_true', help='If enabled, try to avoid generating clusters of points in the triangulation. This will significantly slow down point generation.')
+parser.add_option('-r', '--right', dest='right_tris', action='store_true', help='If enabled, generate right triangles rather than random ones.')
 
 # Parse the arguments
 (options, args) = parser.parse_args()
@@ -242,7 +271,10 @@ else:
 
 # Generate points on this portion of the canvas
 scale = 1.25
-points = generate_points(npoints, size, scale, options.decluster)
+if options.right_tris:
+	points = generate_grid_points(npoints, size)
+else:
+	points = generate_random_points(npoints, size, scale, options.decluster)
 
 # Calculate the triangulation
 triangulation = delaunay_triangulation(points)
