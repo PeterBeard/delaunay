@@ -1,6 +1,10 @@
 # delaunay
 Python script for calculating and drawing triangular meshes. The mesh is the Delaunay triangulation of a random assortment of points.
 
+Dependencies
+------------
+* Uses the Python Imagimg Library (PIL) to read/write image files
+
 Usage
 -----
 ```
