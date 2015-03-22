@@ -5,7 +5,6 @@ import random
 import sys
 from optparse import OptionParser
 from math import sqrt, ceil
-from fractions import gcd
 from geometry import delaunay_triangulation, tri_centroid
 
 # Convert Cartesian coordinates to screen coordinates
