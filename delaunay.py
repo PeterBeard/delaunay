@@ -122,6 +122,40 @@ def generate_grid_points(n_points, area):
 
 	return points
 
+# Generate a set of points that will triangulate to equilateral triangles
+#	n_points is the number of points to generate
+#	area is a 2-tuple describing the boundaries of the field in x and y
+def generate_equilateral_points(n_points, area):
+	points = []
+
+	# Figure out roughly how many points we need in x
+	n_points_x = ceil(sqrt(n_points))
+
+	# Calculate the spacing
+	x_spacing = max(ceil(area[0]/n_points_x), 1)
+	x_offset = x_spacing/2
+	y_spacing = sqrt(x_spacing**2 - (x_spacing/2)**2)
+	
+	# Generate the points
+	xmax = area[0]+x_spacing+x_offset
+	ymax = area[1]+y_spacing
+	y = 0
+	odd_row = False
+	while y <= ymax:
+		# Offset adjacent rows to get equilateral triangles instead of right triangles
+		if odd_row:
+			x = -x_offset
+		else:
+			x = 0
+
+		while x <= xmax:
+			points.append((int(x),int(y)))
+			x += x_spacing
+		odd_row = not odd_row
+		y += y_spacing
+	
+	return points
+
 # Draw a set of polygons to the screen using the given colors
 #	colors is a list of RGB coordinates, one per polygon
 #	polys is a list of polygons defined by their vertices as x,y coordinates
@@ -231,6 +265,7 @@ parser.add_option('-a', '--antialias', dest='antialias', action='store_true', he
 parser.add_option('-l', '--lines', dest='lines', action='store_true', help='If enabled, draw lines along the triangle edges.')
 parser.add_option('-d', '--decluster', dest='decluster', action='store_true', help='If enabled, try to avoid generating clusters of points in the triangulation. This will significantly slow down point generation.')
 parser.add_option('-r', '--right', dest='right_tris', action='store_true', help='If enabled, generate right triangles rather than random ones.')
+parser.add_option('-e', '--equilateral', dest='equilateral_tris', action='store_true', help='If enabled, generate equilateral triangles rather than random ones.')
 
 # Parse the arguments
 (options, args) = parser.parse_args()
@@ -270,7 +305,9 @@ else:
 
 # Generate points on this portion of the canvas
 scale = 1.25
-if options.right_tris:
+if options.equilateral_tris:
+	points = generate_equilateral_points(npoints, size)
+elif options.right_tris:
 	points = generate_grid_points(npoints, size)
 else:
 	points = generate_random_points(npoints, size, scale, options.decluster)
