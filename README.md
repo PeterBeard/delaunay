@@ -39,4 +39,6 @@ Options:
                         down point generation.
   -r, --right           If enabled, generate right triangles rather than
                         random ones.
+  -e, --equilateral     If enabled, generate equilateral triangles rather than
+                        random ones.
 ```
