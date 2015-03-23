@@ -117,7 +117,7 @@ def calculate_tri_vertices(side_a, side_b, side_c):
 	# Calculate the vertices
 	# If one of the sides is vertical, we have a special case
 	# Vertical A
-	if not m_a:
+	if m_a is None:
 		a_x = side_a[0][0]
 		a_y = m_b*a_x + b_b
 
@@ -127,9 +127,9 @@ def calculate_tri_vertices(side_a, side_b, side_c):
 		c_y = m_c*c_x + b_c
 		return ((a_x, a_y), b, (c_x, c_y))
 	# Vertical B
-	elif not m_b:
+	elif m_b is None:
 		a_x = side_b[0][0]
-		a_y = m_b*a_x + b_b
+		a_y = m_c*a_x + b_c
 
 		b_x = side_b[0][0]
 		b_y = m_c*b_x + b_c
@@ -137,7 +137,7 @@ def calculate_tri_vertices(side_a, side_b, side_c):
 		c = lines_intersection((m_c, b_c), (m_a, b_a))
 		return ((a_x, a_y), (b_x, b_y), c)
 	# Vertical C
-	elif not m_c:
+	elif m_c is None:
 		a = lines_intersection((m_a, b_a), (m_b, b_b))
 
 		b_x = side_c[0][0]
@@ -336,7 +336,7 @@ def convex_hull(points):
 	i = -1
 	for p in points:
 		i += 1
-		if not min_point or p[1] <= min_point[1]:
+		if min_point is None or p[1] <= min_point[1]:
 			if min_point and p[1] == min_point[1]:
 				if p[0] < min_point[0]:
 					min_point = p
