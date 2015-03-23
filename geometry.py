@@ -258,16 +258,8 @@ def tri_centroid(t):
 def tri_circumcircle(t):
 	# Get the circumcenter of the triangle
 	center = tri_circumcenter(t)
-	# Define the sides
-	A = (t[0],t[1])
-	B = (t[1],t[2])
-	C = (t[2],t[0])
-	# The radius of the circumcircle is given by this formula of the lengths of the sides
-	a = sqrt((A[0][0]-A[1][0])**2 + (A[0][1]-A[1][1])**2)
-	b = sqrt((B[0][0]-B[1][0])**2 + (B[0][1]-B[1][1])**2)
-	c = sqrt((C[0][0]-C[1][0])**2 + (C[0][1]-C[1][1])**2)
-
-	radius = (a*b*c)/sqrt((a+b+c)*(b+c-a)*(c+a-b)*(a+b-c))
+	# The radius of the circle is just the distance from the center to any vertex
+	radius = sqrt((center[0]-t[0][0])**2 + (center[1]-t[0][1])**2)
 	return (center, radius)
 
 # Determine whether two triangles have any vertices in common
