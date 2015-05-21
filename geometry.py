@@ -413,7 +413,7 @@ def delaunay_triangulation(points):
 		raise ValueError('Need at least three points to triangulate')
 	# Three points is the simplest case
 	if len(points) == 3:
-		return tuple(points)
+		return [tuple(points)]
 	# Start with a triangle large enough to contain all of the points
 	scale_factor = 1.5
 	supertriangle = scale_tri(enclosing_triangle(points), scale_factor)
