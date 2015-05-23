@@ -5,6 +5,7 @@ import random
 import sys
 from optparse import OptionParser
 from math import sqrt, ceil
+from fractions import gcd
 from geometry import delaunay_triangulation, tri_centroid
 
 # Convert Cartesian coordinates to screen coordinates
@@ -104,11 +105,16 @@ def generate_random_points(n_points, area, scale=1, decluster=True):
 #	area is a 2-tuple describing the boundaries of the field in x and y
 def generate_grid_points(n_points, area):
 	points = []
-	
+
+	# Find the GCD of x and y and factor it out
+	k = gcd(area[0],area[1])
+	reduced_x = area[0]/k
+	reduced_y = area[1]/k
+
 	# Find a number of points that will make a nice grid
-	n_points_x = ceil(sqrt(n_points))
-	n_points_y = ceil(sqrt(n_points))
-	
+	n_points_x = ceil(sqrt(n_points*reduced_x))
+	n_points_y = ceil(sqrt(n_points*reduced_y))
+
 	x_spacing = max(ceil(area[0]/n_points_x), 1)
 	y_spacing = max(ceil(area[1]/n_points_y), 1)
 
