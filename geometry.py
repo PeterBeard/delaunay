@@ -2,6 +2,12 @@
 from __future__ import division
 from math import sqrt, atan2
 
+# Make sure a line segment is valid
+#	line is a 2-tuple of x,y coordinates, e.g. ((x1,y1),(x2,y2))
+#	Returns True if a line segment meets the above spec and False otherwise
+def is_valid_segment(line):
+	return (type(line) is tuple or type(line) is list) and len(line) == 2 and (type(line[0]) is tuple or type(line[0]) is list) and len(line[0]) == 2 and (type(line[1]) is tuple or type(line[1]) is list) and len(line[1]) == 2
+
 # Find the midpoint of a line segment
 #	line is a 2-tuple of x,y coordinates, e.g. ((x1,y1),(x2,y2))
 #	Returns an x,y coordinate pair
@@ -16,7 +22,7 @@ def slope(line):
 		return (line[1][1] - line[0][1])/(line[1][0] - line[0][0])
 	except:
 		# Raise an error if the input isn't a line segment
-		if len(line) != 2 or len(line[0]) != 2 or len(line[1]) != 2:
+		if not is_valid_segment(line):
 			raise ValueError('Input is not a line segment ((x1, y1), (x2, y2))')
 		# Raise an error if both points are the same
 		if line[0] == line[1]:
@@ -34,7 +40,7 @@ def perp_slope(line):
 		return -1*(line[1][0] - line[0][0])/(line[1][1] - line[0][1])
 	except:
 		# Raise an error if the input isn't a line segment
-		if len(line) != 2 or len(line[0]) != 2 or len(line[1]) != 2:
+		if not is_valid_segment(line):
 			raise ValueError('Input is not a line segment ((x1, y1), (x2, y2))')
 		# Raise an error if both points are the same
 		if line[0] == line[1]:
