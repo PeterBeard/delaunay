@@ -339,7 +339,7 @@ def convex_hull(points):
 	points_copy = points[::1]
 	del points_copy[min_i]
 	# Next, sort the points by angle (asc) relative to the minimum point
-	spoints = [min_point] + sorted(points_copy, lambda x,y: cmp(angle(min_point, x), angle(min_point, y)))
+	spoints = [min_point] + sorted(points_copy, key=lambda x: angle(min_point, x))
 	# Now we start iterating over the points, considering them three at a time
 	hull = spoints[0:3]
 	for p in spoints[3:]:

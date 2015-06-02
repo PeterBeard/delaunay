@@ -282,15 +282,15 @@ npoints = options.n_points
 # Make sure the gradient name exists (if applicable)
 gname = options.gradient
 if not gname and not options.image:
-	print 'Must select either a gradient (-g) or input image (-i). See help for details.'
+	print('Must select either a gradient (-g) or input image (-i). See help for details.')
 	sys.exit(64)
 elif gname not in gradient and not options.image:
-	print 'Invalid gradient name'
+	print('Invalid gradient name')
 	sys.exit(64)
 elif options.image:
 	# Warn if a gradient was selected as well as an image
 	if options.gradient:
-		print 'Image supercedes gradient; gradient selection ignored'
+		print('Image supercedes gradient; gradient selection ignored')
 	background_image = Image.open(options.image)
 
 
@@ -298,12 +298,12 @@ elif options.image:
 if options.image:
 	# Warn if overriding user-defined width and height
 	if options.width or options.height:
-		print 'Image dimensions supercede specified width and height'
+		print('Image dimensions supercede specified width and height')
 	size = background_image.size
 else:
 	# Make sure width and height are positive
 	if options.width <= 0 or options.height <= 0:
-		print 'Width and height must be greater than zero.'
+		print('Width and height must be greater than zero.')
 		sys.exit(64)
 
 	size = (options.width, options.height)
@@ -323,7 +323,7 @@ triangulation = delaunay_triangulation(points)
 
 # Failed to find a triangulation
 if not triangulation:
-	print 'Failed to find a triangulation.'
+	print('Failed to find a triangulation.')
 	sys.exit(1)
 
 # Translate the points to screen coordinates
@@ -362,6 +362,6 @@ if options.antialias:
 
 # Write the image to a file
 image.save(options.filename)
-print 'Image saved to %s' % options.filename
+print('Image saved to %s' % options.filename)
 sys.exit(0)
 
