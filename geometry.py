@@ -98,6 +98,9 @@ def line_intersect_vertical(a, p):
 #	b and c are represented the same way
 #	Returns a tuple of three x,y coordinate pairs; the vertices of the triangle
 def calculate_tri_vertices(side_a, side_b, side_c):
+        # Make sure the inputs are line segments
+        if not is_valid_segment(side_a) or not is_valid_segment(side_b) or not is_valid_segment(side_c):
+            return None
 	# Calculate slopes and y-intercepts of the sides
 	if is_vertical(side_a):
 		m_a = None
@@ -174,17 +177,21 @@ def triangle_from_edge_point(edge, point):
 #	t is a triangle defined by three vertices, each of which is an x,y coordinate pair, e.g. ((x1,y1),(x2,y2),(x3,y3))
 #	Returns a triangle defined by three edges consisting of a pair of x,y coordinates, e.g. (((x1,y2),(x2,y2)), ((x2,y2),(x3,y3)), etc)
 def vertices_to_edges(t):
-	return (
-		(t[-1], t[0]),
-		(t[0], t[1]),
-		(t[1], t[2])
-	)
+    if len(t) != 3:
+        return None
+    return (
+        (t[-1], t[0]),
+        (t[0], t[1]),
+        (t[1], t[2])
+    )
 
 # Convert an edge definition of a triangle to a vertex definition
 #	t is a triangle defined by three edges, each of which is a pair of x,y coordinates
 #	Returns a triangle defined by three x,y coordinate vertices
 def edges_to_vertices(t):
-	return (t[0][1], t[1][1], t[2][1])
+    if len(t) != 3:
+        return None
+    return (t[0][1], t[1][1], t[2][1])
 
 # Determine whether the given triangle contains the given point
 #	t is a triangle defined by three pairs of x,y coordinates
