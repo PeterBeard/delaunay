@@ -3,7 +3,7 @@
 from PIL import Image, ImageDraw
 from random import randrange
 import sys
-from optparse import OptionParser
+import argparse
 from math import sqrt, ceil
 from fractions import gcd
 from geometry import delaunay_triangulation, tri_centroid
@@ -277,28 +277,28 @@ gradient = {
 }
 
 # Get command line arguments
-parser = OptionParser()
+parser = argparse.ArgumentParser()
 parser.set_defaults(filename='triangles.png')
 parser.set_defaults(n_points=100)
 
 # Value options
-parser.add_option('-o', '--output', dest='filename', type='string', help='The filename to write the image to. Supported filetypes are BMP, TGA, PNG, and JPEG')
-parser.add_option('-n', '--npoints', dest='n_points', type='int', help='The number of points to use when generating the triangulation.')
-parser.add_option('-x', '--width', dest='width', type='int', help='The width of the image.')
-parser.add_option('-y', '--height', dest='height', type='int', help='The height of the image.')
-parser.add_option('-g', '--gradient', dest='gradient', type='string', help='The name of the gradient to use.')
-parser.add_option('-i', '--image-file', dest='image', type='string', help='An image file to use when calculating triangle colors. Image dimensions will override dimensions set by -x and -y.')
-parser.add_option('-k', '--darken', dest='darken_amount', type='int', help='Darken random triangles my the given amount to make the pattern stand out more')
+parser.add_argument('-o', '--output', dest='filename', help='The filename to write the image to. Supported filetypes are BMP, TGA, PNG, and JPEG')
+parser.add_argument('-n', '--npoints', dest='n_points', type=int, help='The number of points to use when generating the triangulation.')
+parser.add_argument('-x', '--width', dest='width', type=int, help='The width of the image.')
+parser.add_argument('-y', '--height', dest='height', type=int, help='The height of the image.')
+parser.add_argument('-g', '--gradient', dest='gradient', help='The name of the gradient to use.')
+parser.add_argument('-i', '--image-file', dest='image', help='An image file to use when calculating triangle colors. Image dimensions will override dimensions set by -x and -y.')
+parser.add_argument('-k', '--darken', dest='darken_amount', type=int, help='Darken random triangles my the given amount to make the pattern stand out more')
 
 # Flags
-parser.add_option('-a', '--antialias', dest='antialias', action='store_true', help='If enabled, draw the image at 4x resolution and downsample to reduce aliasing.')
-parser.add_option('-l', '--lines', dest='lines', action='store_true', help='If enabled, draw lines along the triangle edges.')
-parser.add_option('-d', '--decluster', dest='decluster', action='store_true', help='If enabled, try to avoid generating clusters of points in the triangulation. This will significantly slow down point generation.')
-parser.add_option('-r', '--right', dest='right_tris', action='store_true', help='If enabled, generate right triangles rather than random ones.')
-parser.add_option('-e', '--equilateral', dest='equilateral_tris', action='store_true', help='If enabled, generate equilateral triangles rather than random ones.')
+parser.add_argument('-a', '--antialias', dest='antialias', action='store_true', help='If enabled, draw the image at 4x resolution and downsample to reduce aliasing.')
+parser.add_argument('-l', '--lines', dest='lines', action='store_true', help='If enabled, draw lines along the triangle edges.')
+parser.add_argument('-d', '--decluster', dest='decluster', action='store_true', help='If enabled, try to avoid generating clusters of points in the triangulation. This will significantly slow down point generation.')
+parser.add_argument('-r', '--right', dest='right_tris', action='store_true', help='If enabled, generate right triangles rather than random ones.')
+parser.add_argument('-e', '--equilateral', dest='equilateral_tris', action='store_true', help='If enabled, generate equilateral triangles rather than random ones.')
 
 # Parse the arguments
-(options, args) = parser.parse_args()
+options = parser.parse_args()
 
 # Set the number of points to use
 npoints = options.n_points
