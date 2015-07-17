@@ -14,7 +14,7 @@ Options:
   -h, --help            show this help message and exit
   -o FILENAME, --output=FILENAME
                         The filename to write the image to. Supported
-                        filetyles are BMP, TGA, PNG, and JPEG
+                        filetypes are BMP, TGA, PNG, and JPEG
   -n N_POINTS, --npoints=N_POINTS
                         The number of points to use when generating the
                         triangulation.
