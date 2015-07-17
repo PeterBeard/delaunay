@@ -282,7 +282,7 @@ parser.set_defaults(filename='triangles.png')
 parser.set_defaults(n_points=100)
 
 # Value options
-parser.add_option('-o', '--output', dest='filename', type='string', help='The filename to write the image to. Supported filetyles are BMP, TGA, PNG, and JPEG')
+parser.add_option('-o', '--output', dest='filename', type='string', help='The filename to write the image to. Supported filetypes are BMP, TGA, PNG, and JPEG')
 parser.add_option('-n', '--npoints', dest='n_points', type='int', help='The number of points to use when generating the triangulation.')
 parser.add_option('-x', '--width', dest='width', type='int', help='The width of the image.')
 parser.add_option('-y', '--height', dest='height', type='int', help='The height of the image.')
