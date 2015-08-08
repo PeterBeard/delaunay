@@ -6,7 +6,7 @@ import sys
 import argparse
 from math import sqrt, ceil
 from fractions import gcd
-from geometry import delaunay_triangulation, tri_centroid
+from geometry import delaunay_triangulation, tri_centroid, Point, Triangle
 
 
 # Convert Cartesian coordinates to screen coordinates
@@ -14,11 +14,15 @@ from geometry import delaunay_triangulation, tri_centroid
 #   size is a 2-tuple of the screen dimensions (width, height)
 #   Returns a list of points that have been transformed to screen coords
 def cart_to_screen(points, size):
-    trans_points = []
-    if points:
-        for p in points:
-            trans_points.append((p[0], size[1]-p[1]))
-    return trans_points
+    if type(points) is Triangle:
+        return Triangle(
+            Point(points.a.x, size[1] - points.a.y),
+            Point(points.b.x, size[1] - points.b.y),
+            Point(points.c.x, size[1] - points.c.y)
+        )
+    else:
+        trans_points = [Point(p.x, size[1] - p.y) for p in points]
+        return trans_points
 
 
 # Calculate a point on a color gradient
@@ -63,7 +67,7 @@ def generate_random_points(n_points, area, scale=1, decluster=True):
     # Generate some random points within the bounding rectangle
     n_extra_points = int(cluster_fraction*n_points)
     points = [
-        (int(randrange(bound_x)),
+        Point(int(randrange(bound_x)),
          int(randrange(bound_y)))
         for __ in xrange(0, n_extra_points)
     ]
@@ -80,7 +84,7 @@ def generate_random_points(n_points, area, scale=1, decluster=True):
             for q in points:
                 if q == p:
                     break
-                q_d = sqrt((p[0]-q[0])**2+(p[1]-q[1])**2)
+                q_d = sqrt((p.x-q.x)**2+(p.y-q.y)**2)
                 if not d or q_d < d:
                     d = q_d
             if d:
@@ -105,10 +109,10 @@ def generate_random_points(n_points, area, scale=1, decluster=True):
         points = [p[1] for p in sorted_points]
 
     # We add four "overscan" points so the edges of the image get colored
-    points.append((-300, -10))
-    points.append((area[0]+10, -300))
-    points.append((area[0]+300, area[1]+10))
-    points.append((-100, area[1]+300))
+    points.append(Point(-300, -10))
+    points.append(Point(area[0]+10, -300))
+    points.append(Point(area[0]+300, area[1]+10))
+    points.append(Point(-100, area[1]+300))
 
     return points
 
