@@ -76,10 +76,10 @@ def perp_slope(line):
         if not is_valid_segment(line):
             raise ValueError('Input is not a line segment ((x1, y1), (x2, y2))')
         # Raise an error if both points are the same
-        if line[0] == line[1]:
+        if line.start == line.end:
             raise ValueError('Both points are the same')
         # Raise an error if dy = 0
-        if line[0][1] == line[1][1]:
+        if line.start.y == line.end.y:
             raise ValueError('Line has zero slope')
 
 
@@ -198,7 +198,7 @@ def calculate_tri_vertices(side_a, side_b, side_c):
         a = lines_intersection(Line(m_a, b_a), Line(m_b, b_b))
         b = lines_intersection(Line(m_b, b_b), Line(m_c, b_c))
         c = lines_intersection(Line(m_c, b_c), Line(m_a, b_a))
-        return (a, b, c)
+        return Triangle(a, b, c)
 
     except ZeroDivisionError:
         return None
