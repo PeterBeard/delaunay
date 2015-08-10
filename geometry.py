@@ -364,7 +364,7 @@ def angle(a, b):
     if type(a) is not Point or type(b) is not Point:
         a = Point(a[0], a[1])
         b = Point(b[0], b[0])
-    return atan2(b.y - a.y, b.x - a.x)
+    return atan2(b.y, b.x) - atan2(a.y, a.x)
 
 
 # Calculates the cross product of three points
