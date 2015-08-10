@@ -460,7 +460,7 @@ def enclosing_triangle(points):
     # Convert the hull from a list of points to a list of edges
     edges = []
     for p in range(0, len(hull)):
-        edges.append((hull[p-1], hull[p]))
+        edges.append(LineSegment(hull[p-1], hull[p]))
     triangle = None
     # This is not a fast way to do it, but it works and is way easier to implement than the O(n) algorithm
     for i in edges:
