@@ -69,7 +69,7 @@ def generate_random_points(n_points, area, scale=1, decluster=True):
     points = [
         Point(int(randrange(bound_x)),
          int(randrange(bound_y)))
-        for __ in xrange(0, n_extra_points)
+        for __ in range(0, n_extra_points)
     ]
 
     # De-cluster the points
@@ -139,7 +139,7 @@ def generate_grid_points(n_points, area):
     while y <= area[1]+y_spacing:
         x = 0
         while x <= area[0]+x_spacing:
-            points.append((x, y))
+            points.append(Point(x, y))
             x += x_spacing
         y += y_spacing
 
@@ -173,7 +173,7 @@ def generate_equilateral_points(n_points, area):
             x = 0
 
         while x <= xmax:
-            points.append((int(x), int(y)))
+            points.append(Point(int(x), int(y)))
             x += x_spacing
         odd_row = not odd_row
         y += y_spacing
@@ -282,16 +282,16 @@ gradient = {
 
 # Get command line arguments
 parser = argparse.ArgumentParser()
-parser.set_defaults(filename='triangles.png')
+parser.set_defaults(output_filename='triangles.png')
 parser.set_defaults(n_points=100)
 
 # Value options
-parser.add_argument('-o', '--output', dest='filename', help='The filename to write the image to. Supported filetypes are BMP, TGA, PNG, and JPEG')
+parser.add_argument('-o', '--output', dest='output_filename', help='The filename to write the image to. Supported filetypes are BMP, TGA, PNG, and JPEG')
 parser.add_argument('-n', '--npoints', dest='n_points', type=int, help='The number of points to use when generating the triangulation.')
 parser.add_argument('-x', '--width', dest='width', type=int, help='The width of the image.')
 parser.add_argument('-y', '--height', dest='height', type=int, help='The height of the image.')
 parser.add_argument('-g', '--gradient', dest='gradient', help='The name of the gradient to use.')
-parser.add_argument('-i', '--image-file', dest='image', help='An image file to use when calculating triangle colors. Image dimensions will override dimensions set by -x and -y.')
+parser.add_argument('-i', '--image-file', dest='input_filename', help='An image file to use when calculating triangle colors. Image dimensions will override dimensions set by -x and -y.')
 parser.add_argument('-k', '--darken', dest='darken_amount', type=int, help='Darken random triangles my the given amount to make the pattern stand out more')
 
 # Flags
@@ -309,21 +309,25 @@ npoints = options.n_points
 
 # Make sure the gradient name exists (if applicable)
 gname = options.gradient
-if not gname and not options.image:
+if not gname and not options.input_filename:
     print('Require either gradient (-g) or input image (-i). Try --help for details.')
     sys.exit(64)
-elif gname not in gradient and not options.image:
+elif gname not in gradient and not options.input_filename:
     print('Invalid gradient name')
     sys.exit(64)
-elif options.image:
+elif options.input_filename:
     # Warn if a gradient was selected as well as an image
     if options.gradient:
         print('Image supercedes gradient; gradient selection ignored')
-    background_image = Image.open(options.image)
+    background_image = Image.open(options.input_filename)
 
+# Input and output files can't be the same
+if options.input_filename == options.output_filename:
+    print('Input and output files must be different.')
+    sys.exit(64)
 
 # If an image is being used as the background, set the canvas size to match it
-if options.image:
+if options.input_filename:
     # Warn if overriding user-defined width and height
     if options.width or options.height:
         print('Image dimensions supercede specified width and height')
@@ -355,10 +359,10 @@ if not triangulation:
     sys.exit(1)
 
 # Translate the points to screen coordinates
-trans_triangulation = map(lambda x: cart_to_screen(x, size), triangulation)
+trans_triangulation = list(map(lambda x: cart_to_screen(x, size), triangulation))
 
 # Assign colors to the triangles
-if options.image:
+if options.input_filename:
     colors = color_from_image(background_image, trans_triangulation)
 else:
     colors = color_from_gradient(gradient[gname], size, trans_triangulation)
@@ -392,10 +396,10 @@ else:
     draw_polys(draw, colors, trans_triangulation)
 # Resample the image using the built-in Lanczos filter
 if options.antialias:
-    size = (size[0]/aa_amount, size[1]/aa_amount)
+    size = (int(size[0]/aa_amount), int(size[1]/aa_amount))
     image = image.resize(size, Image.ANTIALIAS)
 
 # Write the image to a file
-image.save(options.filename)
-print('Image saved to %s' % options.filename)
+image.save(options.output_filename)
+print('Image saved to %s' % options.output_filename)
 sys.exit(0)
