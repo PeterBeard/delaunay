@@ -5,6 +5,8 @@ from math import sqrt, atan2
 
 # A point has an x and a y coordinate
 Point = namedtuple('Point', 'x y')
+# A vector also has an x and a y coordinate
+Vector = namedtuple('Vector', 'x y')
 # A line segment consists of two points, a and b
 LineSegment = namedtuple('LineSegment', 'start end')
 # A line is defined by its slope and its y-intercept
