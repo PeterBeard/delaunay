@@ -420,7 +420,7 @@ def translate_tri(t, d):
 def scale_tri(t, s):
     centroid = tri_centroid(t)
     # Translate the vertices of the triangle as if the centroid were the origin
-    trans_t = translate_tri(t, Point(centroid.x * -1, centroid.y * -1))
+    trans_t = translate_tri(t, Vector(centroid.x * -1, centroid.y * -1))
     # Multiply all of the vertices by the scale factor
     scaled_t = Triangle(
         Point(trans_t.a.x * s, trans_t.a.y * s),
