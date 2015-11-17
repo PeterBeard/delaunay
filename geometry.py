@@ -130,6 +130,25 @@ def line_intersect_vertical(a, p):
     return Point(x, y)
 
 
+# Compare two triangles
+#   a is a Triangle or 3-tuple defining a triangle by its vertices or edges
+#   b is a Triangle or 3-tuple defining a triangle by its vertices or edges
+#   returns True if both triangles have the same vertices and False otherwise
+#     Also returns False for invalid input
+def compare_tris(a, b):
+    # Only compare triangles
+    if (type(a) is not Triangle or type(b) is not Triangle) and (len(a) != 3 or len(b) != 3):
+        return False
+
+    if a == b:
+        return True
+
+    # Order doesn't matter; triangles are the same if they have the same vertices
+    if a[0] in b and a[1] in b and a[2] in b:
+        return True
+
+    return False
+
 # Calculate the vertices of a triangle given three line segments along its sides
 #   a is a line segment represented by a 2-tuple of x,y coordinates, i.e. ((x1,y1), (x2,y2))
 #   b and c are represented the same way
@@ -347,6 +366,10 @@ def tri_circumcircle(t):
 #   t1 and t2 are two vertex-defined triangles
 #   Returns true if any vertices are shared and false otherwise
 def tri_share_vertices(t1, t2):
+    # Identical triangles are easy to detect
+    if t1 == t2:
+        return True
+
     # Iterate over the vertices in t1 and compare them to every vertex in t2
     for vertex1 in t1:
         for vertex2 in t2:
@@ -363,7 +386,7 @@ def tri_share_vertices(t1, t2):
 def angle(a, b):
     if type(a) is not Point or type(b) is not Point:
         a = Point(a[0], a[1])
-        b = Point(b[0], b[0])
+        b = Point(b[0], b[1])
     return atan2(b.y, b.x) - atan2(a.y, a.x)
 
 
