@@ -266,66 +266,68 @@ def calculate_tri_vertices(side_a, side_b, side_c):
     # Make sure the inputs are line segments
     if not is_valid_segment(side_a) or not is_valid_segment(side_b) or not is_valid_segment(side_c):
         return None
+
     # Calculate slopes and y-intercepts of the sides
     if is_vertical(side_a):
-        m_a = None
+        A = Line(None, None)
     else:
-        m_a = slope(side_a)
-        b_a = side_a.end.y - m_a * side_a.end.x
+        m = slope(side_a)
+        A = Line(m, side_a.end.y - m * side_a.end.x)
 
     if is_vertical(side_b):
-        m_b = None
+        B = Line(None, None)
     else:
-        m_b = slope(side_b)
-        b_b = side_b.end.y - m_b * side_b.end.x
+        m = slope(side_b)
+        B = Line(m, side_b.end.y - m * side_b.end.x)
 
     if is_vertical(side_c):
-        m_c = None
+        C = Line(None, None)
     else:
-        m_c = slope(side_c)
-        b_c = side_c.end.y - m_c * side_c.end.x
+        m = slope(side_c)
+        C = Line(m, side_c.end.y - m * side_c.end.x)
 
     # If any two sides are parallel then this is not a valid triangle
-    if m_a == m_b or m_a == m_c or m_b == m_c:
+    if A.slope == B.slope or A.slope == C.slope or B.slope == C.slope:
         return None
+
     # Calculate the vertices
     # If one of the sides is vertical, we have a special case
     # Vertical A
-    if m_a is None:
+    if A.slope is None:
         a_x = side_a.start.x
-        a_y = m_b*a_x + b_b
+        a_y = B.slope*a_x + B.yintercept
 
-        b = lines_intersection(Line(m_b, b_b), Line(m_c, b_c))
+        b = lines_intersection(B, C)
 
         c_x = side_a.start.x
-        c_y = m_c*c_x + b_c
+        c_y = C.slope*c_x + C.yintercept
         return Triangle(Point(a_x, a_y), b, Point(c_x, c_y))
     # Vertical B
-    elif m_b is None:
+    elif B.slope is None:
         a_x = side_b.start.x
-        a_y = m_c*a_x + b_c
+        a_y = C.slope*a_x + C.yintercept
 
         b_x = side_b.start.x
-        b_y = m_c*b_x + b_c
+        b_y = C.slope*b_x + C.yintercept
 
-        c = lines_intersection(Line(m_c, b_c), Line(m_a, b_a))
+        c = lines_intersection(C, A)
         return Triangle(Point(a_x, a_y), Point(b_x, b_y), c)
     # Vertical C
-    elif m_c is None:
-        a = lines_intersection(Line(m_a, b_a), Line(m_b, b_b))
+    elif C.slope is None:
+        a = lines_intersection(A, B)
 
         b_x = side_c.start.x
-        b_y = m_b*b_x + b_b
+        b_y = B.slope*b_x + B.yintercept
 
         c_x = side_c.start.x
-        c_y = m_a*c_x + b_a
+        c_y = A.slope*c_x + A.yintercept
         return Triangle(a, Point(b_x, b_y), Point(c_x, c_y))
 
     # We may encounter a division by zero error if the slopes are too close
     try:
-        a = lines_intersection(Line(m_a, b_a), Line(m_b, b_b))
-        b = lines_intersection(Line(m_b, b_b), Line(m_c, b_c))
-        c = lines_intersection(Line(m_c, b_c), Line(m_a, b_a))
+        a = lines_intersection(A, B)
+        b = lines_intersection(B, C)
+        c = lines_intersection(C, A)
         return Triangle(a, b, c)
 
     except ZeroDivisionError:
