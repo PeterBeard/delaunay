@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python2
 
 from PIL import Image, ImageDraw
 from random import randrange
