@@ -12,9 +12,14 @@ from PIL import Image, ImageDraw
 from random import randrange
 import sys
 import argparse
+from collections import namedtuple
 from math import sqrt, ceil
 from fractions import gcd
 from geometry import delaunay_triangulation, tri_centroid, Point, Triangle
+
+# Some types to make things a little easier
+Color = namedtuple('Color', 'r g b')
+Gradient = namedtuple('Gradient', 'start end')
 
 
 def cart_to_screen(points, size):
@@ -44,26 +49,26 @@ def calculate_color(grad, val):
     Calculate a point on a color gradient. Color values are in [0, 255].
 
     Arguments:
-    grad is a gradient with two endpoints, both 3-tuples of RGB coordinates
+    grad is a Gradient object
     val is a value in [0, 1] indicating where the color is on the gradient
 
     Returns:
-    A 3-tuple (R, G, B) representing the color of the gradient at val
+    A Color object
     """
-    slope_r = grad[1][0] - grad[0][0]
-    slope_g = grad[1][1] - grad[0][1]
-    slope_b = grad[1][2] - grad[0][2]
+    slope_r = grad.end.r - grad.start.r
+    slope_g = grad.end.g - grad.start.g
+    slope_b = grad.end.b - grad.start.b
 
-    r = int(grad[0][0] + slope_r*val)
-    g = int(grad[0][1] + slope_g*val)
-    b = int(grad[0][2] + slope_b*val)
+    r = int(grad.start.r + slope_r*val)
+    g = int(grad.start.g + slope_g*val)
+    b = int(grad.start.b + slope_b*val)
 
     # Perform thresholding
     r = min(max(r, 0), 255)
     g = min(max(g, 0), 255)
     b = min(max(b, 0), 255)
 
-    return (r, g, b)
+    return Color(r, g, b)
 
 
 def generate_random_points(n_points, area, scale=1, decluster=True):
@@ -236,9 +241,9 @@ def draw_polys(draw, colors, polys, outline_color=None):
     Draw a set of polygons to the screen using the given colors.
 
     Arguments:
-    colors is a list of RGB coordinates, one per polygon
+    colors is a list of Color objects, one per polygon
     polys is a list of polygons defined by their vertices as x, y coordinates
-    outline_color is a 3-tuple (R, G, B) describing the color of the outlines
+    outline_color is a Color object  describing the color of the outlines
        -- No outlines are drawn if outline_color is None (the default)
     """
     if outline_color:
@@ -260,8 +265,7 @@ def color_from_image(background_image, triangles):
     triangles is a list of vertex-defined Triangle objects
 
     Returns:
-    A list of RGB coordinates describing the color of each triangle
-       -- colors[i] gives the color of triangle[i] as (R, G, B)
+    A list of Color objects, one per triangle such that colors[i] is the color of triangle[i]
     """
     colors = []
     pixels = background_image.load()
@@ -274,7 +278,8 @@ def color_from_image(background_image, triangles):
             int(min(max(centroid[1], 0), size[1]-1))
         )
         # Get the color of the image at the centroid
-        colors.append(pixels[int_centroid[0], int_centroid[1]])
+        p = pixels[int_centroid[0], int_centroid[1]]
+        colors.append(Color(p[0], p[1], p[2]))
     return colors
 
 
@@ -283,14 +288,12 @@ def color_from_gradient(gradient, image_size, triangles):
     Color a graph of triangles using a gradient.
 
     Arguments:
-    gradient is a 2-tuple of RGB triplets describing the gradient (start, end)
-       -- values are linearly interpolated between the endpoints
+    gradient is a Gradient object
     image_size is a tuple of the output dimensions, i.e. (width, height)
     triangles is a list of vertex-defined Triangle objects
 
     Returns:
-    A list of RGB coordinates describing the color of each triangle
-       -- colors[i] gives the color of triangle[i] as (R, G, B)
+    A list of Color objects, one per triangle such that colors[i] is the color of triangle[i]
     """
     colors = []
     # The size of the screen
@@ -312,41 +315,41 @@ def main():
     aa_amount = 4
     # Some gradients
     gradient = {
-        'sunshine': (
-            (255, 248, 9),
-            (255, 65, 9)
+        'sunshine': Gradient(
+            Color(255, 248, 9),
+            Color(255, 65, 9)
         ),
-        'purples': (
-            (255, 9, 204),
-            (4, 137, 232)
+        'purples': Gradient(
+            Color(255, 9, 204),
+            Color(4, 137, 232)
         ),
-        'grass': (
-            (255, 232, 38),
-            (88, 255, 38)
+        'grass': Gradient(
+            Color(255, 232, 38),
+            Color(88, 255, 38)
         ),
-        'valentine': (
-            (102, 0, 85),
-            (255, 25, 216)
+        'valentine': Gradient(
+            Color(102, 0, 85),
+            Color(255, 25, 216)
         ),
-        'sky': (
-            (0, 177, 255),
-            (9, 74, 102)
+        'sky': Gradient(
+            Color(0, 177, 255),
+            Color(9, 74, 102)
         ),
-        'ubuntu': (
-            (119, 41, 83),
-            (221, 72, 20)
+        'ubuntu': Gradient(
+            Color(119, 41, 83),
+            Color(221, 72, 20)
         ),
-        'fedora': (
-            (41, 65, 114),
-            (60, 110, 180)
+        'fedora': Gradient(
+            Color(41, 65, 114),
+            Color(60, 110, 180)
         ),
-        'debian': (
-            (215, 10, 83),
-            (10, 10, 10)
+        'debian': Gradient(
+            Color(215, 10, 83),
+            Color(10, 10, 10)
         ),
-        'opensuse': (
-            (151, 208, 5),
-            (34, 120, 8)
+        'opensuse': Gradient(
+            Color(151, 208, 5),
+            Color(34, 120, 8)
         )
     }
 
@@ -442,7 +445,7 @@ def main():
         for i in range(0, len(colors)):
             c = colors[i]
             d = randrange(options.darken_amount)
-            darkened = (max(c[0]-d, 0), max(c[1]-d, 0), max(c[2]-d, 0))
+            darkened = Color(max(c.r-d, 0), max(c.g-d, 0), max(c.b-d, 0))
             colors[i] = darkened
 
     # Set up for anti-aliasing
