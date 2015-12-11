@@ -108,7 +108,7 @@ def slope(line):
     line is a 2-tuple of x,y coordinates, e.g. ((x1,y1),(x2,y2))
 
     Returns:
-    The slope of the line (float)
+    The slope of the line (float) or None for vertical lines
     """
     try:
         return (line.end.y - line.start.y)/(line.end.x - line.start.x)
@@ -117,9 +117,9 @@ def slope(line):
         # Raise an error if both points are the same
         if line.start == line.end:
             raise ValueError('Both points are the same')
-        # Raise an error if dx = 0
+        # Return None if the line is vertical
         if line.start.x == line.end.x:
-            raise ValueError('Line has infinite slope')
+            return None
     except AttributeError:
         # Raise an error if the input isn't a line segment
         if not is_valid_segment(line):
@@ -134,7 +134,7 @@ def perp_slope(line):
     line is a 2-tuple of x,y coordinates, e.g. ((x1, y1), (x2, y2))
 
     Returns:
-    The slope of the perpendicular line (float)
+    The slope of the perpendicular line (float) or None for horizontal lines
     """
     try:
         # Perpendicular slope is the negative reciprocal of the slope, i.e. -dx/dy
@@ -144,9 +144,9 @@ def perp_slope(line):
         # Raise an error if both points are the same
         if line.start == line.end:
             raise ValueError('Both points are the same')
-        # Raise an error if dy = 0
+        # Return None if the line is horizontal
         if line.start.y == line.end.y:
-            raise ValueError('Line has zero slope')
+            return None
     except AttributeError:
         # Raise an error if the input isn't a line segment
         if not is_valid_segment(line):
@@ -231,6 +231,22 @@ def line_intersect_vertical(a, p):
     return Point(x, y)
 
 
+def line_from_segment(segment):
+    """
+    Calculate the slope-intercept form of a line from a segment along it.
+
+    Arguments:
+    segment -- a LineSegment object
+
+    Returns:
+    A Line object
+    """
+    m = slope(segment)
+    if m is None:
+        return Line(None, None)
+
+    return Line(m, segment.end.y - m * segment.end.x)
+
 def compare_tris(a, b):
     """
     Determine whether two triangles are equal.
@@ -272,23 +288,9 @@ def calculate_tri_vertices(side_a, side_b, side_c):
         return None
 
     # Calculate slopes and y-intercepts of the sides
-    if is_vertical(side_a):
-        A = Line(None, None)
-    else:
-        m = slope(side_a)
-        A = Line(m, side_a.end.y - m * side_a.end.x)
-
-    if is_vertical(side_b):
-        B = Line(None, None)
-    else:
-        m = slope(side_b)
-        B = Line(m, side_b.end.y - m * side_b.end.x)
-
-    if is_vertical(side_c):
-        C = Line(None, None)
-    else:
-        m = slope(side_c)
-        C = Line(m, side_c.end.y - m * side_c.end.x)
+    A = line_from_segment(side_a)
+    B = line_from_segment(side_b)
+    C = line_from_segment(side_c)
 
     # If any two sides are parallel then this is not a valid triangle
     if A.slope == B.slope or A.slope == C.slope or B.slope == C.slope:
