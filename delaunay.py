@@ -1,5 +1,13 @@
 #!/usr/bin/env python2
+"""
+Use Delaunay triangulations to make interesting images.
 
+usage: delaunay.py [-h] [-o OUTPUT_FILENAME] [-n N_POINTS] [-x WIDTH]
+                   [-y HEIGHT] [-g GRADIENT] [-i INPUT_FILENAME]
+                   [-k DARKEN_AMOUNT] [-a] [-l] [-d] [-r] [-e]
+
+Try delaunay.py --help for details.
+"""
 from PIL import Image, ImageDraw
 from random import randrange
 import sys
@@ -9,11 +17,17 @@ from fractions import gcd
 from geometry import delaunay_triangulation, tri_centroid, Point, Triangle
 
 
-# Convert Cartesian coordinates to screen coordinates
-#   points is a list of points of the form (x, y)
-#   size is a 2-tuple of the screen dimensions (width, height)
-#   Returns a list of points that have been transformed to screen coords
 def cart_to_screen(points, size):
+    """
+    Convert Cartesian coordinates to screen coordinates.
+
+    Arguments:
+    points is a list of Point objects or a vertex-defined Triangle object
+    size is a 2-tuple of the screen dimensions (width, height)
+
+    Returns:
+    A list of Point objects or a Triangle object, depending on the type of the input
+    """
     if type(points) is Triangle:
         return Triangle(
             Point(points.a.x, size[1] - points.a.y),
@@ -25,12 +39,17 @@ def cart_to_screen(points, size):
         return trans_points
 
 
-# Calculate a point on a color gradient
-#   grad is a gradient with two endpoints, both 3-tuples of RGB coordinates
-#   val is a value in [0, 1] indicating where the color is on the gradient
-#   Returns a 3-tuple (R, G, B) representing the color of the gradient at val
 def calculate_color(grad, val):
-    # Do gradient calculations
+    """
+    Calculate a point on a color gradient. Color values are in [0, 255].
+
+    Arguments:
+    grad is a gradient with two endpoints, both 3-tuples of RGB coordinates
+    val is a value in [0, 1] indicating where the color is on the gradient
+
+    Returns:
+    A 3-tuple (R, G, B) representing the color of the gradient at val
+    """
     slope_r = grad[1][0] - grad[0][0]
     slope_g = grad[1][1] - grad[0][1]
     slope_b = grad[1][2] - grad[0][2]
@@ -47,14 +66,22 @@ def calculate_color(grad, val):
     return (r, g, b)
 
 
-# Generate a random set of points to triangulate
-#   n_points is the number of points to generate
-#   area is a 2-tuple describing the boundaries of the field in x and y
-#   scale is a value that describes how much of the area to fill with points
-#    -- values greater than 1 will result in points outside the area,
-#    -- values less than 1 result in a set of points bounded by scale*area
-#   decluster is a boolean flag; declustering happens if it's True
 def generate_random_points(n_points, area, scale=1, decluster=True):
+    """
+    Generate a random set of points to triangulate.
+
+    Arguments:
+    n_points is the number of points to generate (int)
+    area is a 2-tuple of the maximum x and y values of the field
+    scale is a value that describes how much of the area to fill with points
+       -- values greater than 1 will result in points outside the area
+       -- values less than 1 result in a set of points bounded by scale*area
+       -- Default is 1
+    decluster is a boolean flag; declustering happens if it's True (default True)
+
+    Returns:
+    A list of Point objects
+    """
     # Generate random points
     # Extra points are generated so we can de-cluster later
     if decluster:
@@ -117,10 +144,17 @@ def generate_random_points(n_points, area, scale=1, decluster=True):
     return points
 
 
-# Generate a rectangular grid of points
-#   n_points is the number of points to generate
-#   area is a 2-tuple describing the boundaries of the field in x and y
 def generate_grid_points(n_points, area):
+    """
+    Generate a rectangular grid of points.
+
+    Arguments:
+    n_points is the number of points to generate (int)
+    area is a 2-tuple of the maximum x and y values of the field
+
+    Returns:
+    A list of Point objects.
+    """
     points = []
 
     # Find the GCD of x and y and factor it out
@@ -146,10 +180,26 @@ def generate_grid_points(n_points, area):
     return points
 
 
-# Generate a set of points that will triangulate to equilateral triangles
-#   n_points is the number of points to generate
-#   area is a 2-tuple describing the boundaries of the field in x and y
 def generate_equilateral_points(n_points, area):
+    """
+    Generate a set of points that will triangulate to equilateral triangles.
+
+    To get equilateral triangles, the grid has to be offset so that every
+    other line is advanced by half the x-spacing. For example, a grid like
+
+    *   *   *   *
+      *   *   * 
+    *   *   *   *
+
+    Will result in equilateral triangles.
+
+    Arguments:
+    n_points is the number of points to generate
+    area is a 2-tuple describing the boundaries of the field in x and y
+
+    Returns:
+    A list of Point objects
+    """
     points = []
 
     # Figure out roughly how many points we need in x
@@ -181,12 +231,16 @@ def generate_equilateral_points(n_points, area):
     return points
 
 
-# Draw a set of polygons to the screen using the given colors
-#   colors is a list of RGB coordinates, one per polygon
-#   polys is a list of polygons defined by their vertices as x, y coordinates
-#   outline_color is a 3-tuple (R, G, B) describing the color of the outlines
-#    -- No outlines are drawn if outline_color is None
 def draw_polys(draw, colors, polys, outline_color=None):
+    """
+    Draw a set of polygons to the screen using the given colors.
+
+    Arguments:
+    colors is a list of RGB coordinates, one per polygon
+    polys is a list of polygons defined by their vertices as x, y coordinates
+    outline_color is a 3-tuple (R, G, B) describing the color of the outlines
+       -- No outlines are drawn if outline_color is None (the default)
+    """
     if outline_color:
         for i in range(0, len(polys)):
             draw.polygon(polys[i], outline=outline_color, fill=colors[i])
@@ -195,13 +249,20 @@ def draw_polys(draw, colors, polys, outline_color=None):
             draw.polygon(polys[i], fill=colors[i])
 
 
-# Color a graph of triangles using the colors from an image
-# -- Triangles' colors determined by the value of the image at the centroid
-#   background_image is a PIL Image object
-#   triangles is a list of 3-tuples e.g. from geometry.delaunay_triangulation()
-#   Returns a list of RGB coordinates describing the color of each triangle
-#    -- colors[i] gives the color of triangle[i] as (R, G, B)
 def color_from_image(background_image, triangles):
+    """
+    Color a graph of triangles using the colors from an image.
+    
+    The color of each triangle is determined by the color of the image pixel at its centroid.
+
+    Arguments:
+    background_image is a PIL Image object
+    triangles is a list of vertex-defined Triangle objects
+
+    Returns:
+    A list of RGB coordinates describing the color of each triangle
+       -- colors[i] gives the color of triangle[i] as (R, G, B)
+    """
     colors = []
     pixels = background_image.load()
     size = background_image.size
@@ -217,14 +278,20 @@ def color_from_image(background_image, triangles):
     return colors
 
 
-# Color a graph of triangles using a gradient
-#   gradient is a 2-tuple of RGB triplets describing the gradient (start, end)
-#    -- values are linearly interpolated between the endpoints
-#   image_size is a tuple of the output dimensions, i.e. (width, height)
-#   triangles is a list of 3-tuples e.g. from geometry.delaunay_triangulation()
-#   Returns a list of RGB coordinates describing the color of each triangle
-#    -- colors[i] gives the color of triangle[i] as (R, G, B)
 def color_from_gradient(gradient, image_size, triangles):
+    """
+    Color a graph of triangles using a gradient.
+
+    Arguments:
+    gradient is a 2-tuple of RGB triplets describing the gradient (start, end)
+       -- values are linearly interpolated between the endpoints
+    image_size is a tuple of the output dimensions, i.e. (width, height)
+    triangles is a list of vertex-defined Triangle objects
+
+    Returns:
+    A list of RGB coordinates describing the color of each triangle
+       -- colors[i] gives the color of triangle[i] as (R, G, B)
+    """
     colors = []
     # The size of the screen
     s = sqrt(image_size[0]**2+image_size[1]**2)

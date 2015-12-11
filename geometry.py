@@ -1,4 +1,43 @@
-# Calculate the Delaunay triangulation of a set of points
+"""
+Geometry functions for finding the Delaunay triangulation of a set of points.
+
+This module exports the following:
+Types:
+    Point: point in 2-space
+    Vector: 2-d vector
+    LineSegment: line segment by its start and end points
+    Line: line defined by its slope and y-intercept
+    Triangle: triangle defined by its three edges or vertices
+    Circle: circle defined by its center point and radius
+
+Functions:
+    is_valid_segment(line): check a line segment for validity
+    midpoint(line): find the midpoint of a line segment
+    slope(line): find the slope of a line segment
+    perp_slope(line): find the perpendicular slope of a line segment
+    point_slope_to_y_intercept(m, p): convert a line segment from point-slope to y-intercept form
+    is_vertical(line): determine whether a line segment is vertical
+    is_horizontal(line): determine whether a line segment is horizontal
+    lines_intersection(a, b): find the point where two lines intersect
+    line_intersect_vertical(line, point): find the y-coordinate where a line intersects a vertical line
+    compare_tris(a, b): determine whether two triangles are equivalent
+    calculate_tri_vertices(a, b, c): calculate the vertices of a triangle defined by the given line segments
+    triangle_from_edge_point(e, p): calculate a triangle from the given line segment and point
+    vertices_to_edges(tri): convert a triangle from vertex form to edge form
+    edges_to_vertices(tri): convert a triangle from edge form to vertex form
+    tri_contains_point(tri, point): determine whether a triangle contains a point
+    tri_circumcenter(tri): find the circumcenter of a triangle
+    tri_centroid(tri): find the centroid of a triangle
+    tri_circumcircle(tri): find the circumcircle of a triangle
+    tri_share_vertices(a, b): determine whether two triangles share any vertices
+    angle(a, b): find the angle between two points
+    cross_product(a, b): find the cross product of three points
+    translate_tri(tri, vector): translate a triangle by the given vector
+    scale_tri(t, s): scale a triangle by the given scale factor
+    convex_hull(p): find the convex hull of a set of points
+    enclosing_triangle(p): find a triangle enclosing a set of points
+    delaunay_triangulation(p): find the Delaunay triangulation of a set of points
+"""
 from __future__ import division
 from collections import namedtuple
 from math import sqrt, atan2
@@ -17,10 +56,16 @@ Triangle = namedtuple('Triangle', 'a b c')
 Circle = namedtuple('Circle', 'center radius')
 
 
-# Make sure a line segment is valid
-#   line is a 2-tuple of x,y coordinates, e.g. ((x1,y1),(x2,y2))
-#   Returns True if a line segment meets the above spec and False otherwise
 def is_valid_segment(line):
+    """
+    Determine whether line is a valid line segment.
+
+    Arguments:
+    line is a 2-tuple of x,y coordinates, e.g. ((x1, y1), (x2, y2))
+
+    Returns:
+    True if the segment is valid and False otherwise.
+    """
     return (
         type(line) is LineSegment or
         type(line) is tuple or
@@ -41,17 +86,29 @@ def is_valid_segment(line):
         len(line[1]) == 2
 
 
-# Find the midpoint of a line segment
-#   line is a 2-tuple of x,y coordinates, e.g. ((x1,y1),(x2,y2))
-#   Returns an x,y coordinate pair
 def midpoint(line):
+    """
+    Find the midpoint of a line segment.
+
+    Arguments:
+    line is a 2-tuple of x,y coordinates, e.g. ((x1,y1),(x2,y2))
+
+    Returns:
+    A Point object representing the midpoint of the line.
+    """
     return Point((line.start.x + line.end.x)/2, (line.start.y + line.end.y)/2)
 
 
-# Find the slope of a line segment
-#   line is a 2-tuple of x,y coordinates, e.g. ((x1,y1),(x2,y2))
-#   Returns the slope of the line
 def slope(line):
+    """
+    Find the slope of a line segment. May raise ValueError.
+
+    Arguments:
+    line is a 2-tuple of x,y coordinates, e.g. ((x1,y1),(x2,y2))
+
+    Returns:
+    The slope of the line (float)
+    """
     try:
         return (line.end.y - line.start.y)/(line.end.x - line.start.x)
     except:
@@ -66,10 +123,16 @@ def slope(line):
             raise ValueError('Line has infinite slope')
 
 
-# Find the slope of a line perpendicular to a line segment
-#   line is a 2-tuple of x,y coordinates, e.g. ((x1,y1),(x2,y2))
-#   Returns the slope of the perpendicular line
 def perp_slope(line):
+    """
+    Find the slope of a line perpendicular to a line segment. May raise ValueError.
+    
+    Arguments:
+    line is a 2-tuple of x,y coordinates, e.g. ((x1, y1), (x2, y2))
+
+    Returns:
+    The slope of the perpendicular line (float)
+    """
     try:
         # Perpendicular slppe is the negative reciprocal of the slope, i.e. -dx/dy
         return -1*(line.end.x - line.start.x)/(line.end.y - line.start.y)
@@ -85,34 +148,59 @@ def perp_slope(line):
             raise ValueError('Line has zero slope')
 
 
-# Convert a line from point-slope form to y-intercept form
-#   m is the slope of the line
-#   p is an x,y coordinate on the line
-#   Returns a 2-tuple containing the slope of the line and the y-intercept, e.g. (m, b)
 def point_slope_to_y_intercept(m, p):
-    # b = y - mx
+    """
+    Convert a line from point-slope form to y-intercept form.
+    
+    The y-intercept is calculated as b = y - mx
+
+    Arguments:
+    m is the slope of the line (float)
+    p is any point on the line (Point or 2-tuple)
+
+    Returns:
+    A Line object corresponding to the original point and slope (m).
+    """
     return Line(m, p.y - m*p.x)
 
 
-# Determine whether a line is vertical
-#   l is a line represented by two x,y coordinates
 def is_vertical(l):
-    # The line is vertical if dx = 0
+    """
+    Determine whether a line is vertical (dx = 0).
+
+    Arguments:
+    l is a LineSegment object
+
+    Returns:
+    True if the line is vertical and False otherwise.
+    """
     return l.start.x == l.end.x
 
 
-# Determine whether a line is horizontal
-#   l is a line represented by two x,y coordinates
 def is_horizontal(l):
-    # The line is horizontal if dy = 0
+    """
+    Determine whether a line is horizontal (dy = 0).
+
+    Arguments:
+    l is a LineSegment object
+
+    Returns:
+    True if the line is horizontal and False otherwise.
+    """
     return l.start.y == l.end.y
 
 
-# Find the intersection of two lines
-#   a is a line defined by its slope and y-intercept, e.g. (m, b)
-#   b is a line defined the same way as a
-#   Returns an x,y coordinate pair (Point)
 def lines_intersection(a, b):
+    """
+    Find the intersection of two lines
+
+    Arguments:
+    a is a Line object
+    b is a Line object
+
+    Returns:
+    A Point object representing the intersection of a and b or None if there is no intersection.
+    """
     try:
         x = (b.yintercept - a.yintercept)/(a.slope - b.slope)
         y = a.slope * x + a.yintercept
@@ -122,22 +210,34 @@ def lines_intersection(a, b):
         return None
 
 
-# Find the intersection of a line with a vertical line
-#   a is a line defined by its slope and y-intercept, e.g. (m, b)
-#   p is an x,y coordinate pair that the vertical line passes through
-#   Returns the point where a crosses the line through p
 def line_intersect_vertical(a, p):
+    """
+    Find the intersection of a line with a vertical line.
+
+    Arguments:
+    a is a line defined by its slope and y-intercept, e.g. (m, b)
+    p is an x,y coordinate pair that the vertical line passes through
+
+    Returns:
+    A Point where a crosses the line through p
+    """
     x = p.x
     y = a.slope * x + a.yintercept
     return Point(x, y)
 
 
-# Compare two triangles
-#   a is a Triangle or 3-tuple defining a triangle by its vertices or edges
-#   b is a Triangle or 3-tuple defining a triangle by its vertices or edges
-#   returns True if both triangles have the same vertices and False otherwise
-#     Also returns False for invalid input
 def compare_tris(a, b):
+    """
+    Determine whether two triangles are equal.
+
+    Arguments:
+    a is a Triangle or 3-tuple defining a triangle by its vertices or edges
+    b is a Triangle or 3-tuple defining a triangle by its vertices or edges
+
+    Returns:
+    True if both triangles have the same vertices and False otherwise
+    Also returns False for invalid input
+    """
     # Only compare triangles
     if (type(a) is not Triangle or type(b) is not Triangle) and (len(a) != 3 or len(b) != 3):
         return False
@@ -151,11 +251,17 @@ def compare_tris(a, b):
 
     return False
 
-# Calculate the vertices of a triangle given three line segments along its sides
-#   a is a line segment represented by a 2-tuple of x,y coordinates, i.e. ((x1,y1), (x2,y2))
-#   b and c are represented the same way
-#   Returns a tuple of three x,y coordinate pairs; the vertices of the triangle
 def calculate_tri_vertices(side_a, side_b, side_c):
+    """
+    Calculate the vertices of a triangle given three line segments along its sides.
+
+    Arguments:
+    a is a line segment represented by a 2-tuple of x,y coordinates, i.e. ((x1, y1), (x2, y2))
+    b and c are represented the same way
+
+    Returns:
+    A vertex-defined Triangle or None.
+    """
     # Make sure the inputs are line segments
     if not is_valid_segment(side_a) or not is_valid_segment(side_b) or not is_valid_segment(side_c):
         return None
@@ -225,18 +331,30 @@ def calculate_tri_vertices(side_a, side_b, side_c):
         return None
 
 
-# Calculate the vertices of a triangle defined by the given edge and point
-#   edge is a pair of x,y coordinates, e.g. ((x1,y1),(x2,y2))
-#   point is an x,y coordinate pair, e.g. (x,y)
-#   Returns a vertex-defined triangle where each vertex is an x,y coordinate
 def triangle_from_edge_point(edge, point):
+    """
+    Calculate the vertices of a triangle defined by the given edge and point
+
+    Arguments:
+    edge is a LineSegment object
+    point is a Point object
+
+    Returns:
+    A vertex-defined Triangle object
+    """
     return Triangle(edge.start, edge.end, point)
 
 
-# Convert a vertex definition of a triangle to an edge definition
-#   t is a triangle defined by three vertices, each of which is an x,y coordinate pair, e.g. ((x1,y1),(x2,y2),(x3,y3))
-#   Returns a triangle defined by three edges consisting of a pair of x,y coordinates, e.g. (((x1,y2),(x2,y2)), ((x2,y2),(x3,y3)), etc)
 def vertices_to_edges(t):
+    """
+    Convert a vertex-defined Triangle to an edge-defined one.
+
+    Arguments:
+    t is a vertex-defined Triangle object
+
+    Returns
+    An edge-defined Triangle object or None
+    """
     if len(t) != 3:
         return None
     return Triangle(
@@ -246,10 +364,16 @@ def vertices_to_edges(t):
     )
 
 
-# Convert an edge definition of a triangle to a vertex definition
-#   t is a triangle defined by three edges, each of which is a pair of x,y coordinates
-#   Returns a triangle defined by three x,y coordinate vertices
 def edges_to_vertices(t):
+    """
+    Convert an edge definition of a triangle to a vertex definition
+
+    Arguments:
+    t is an edge-defined Triangle object
+
+    Returns:
+    A vertex-defined Triangle object or None
+    """
     if len(t) != 3:
         return None
     return Triangle(
@@ -259,10 +383,17 @@ def edges_to_vertices(t):
     )
 
 
-# Determine whether the given triangle contains the given point
-#   t is a triangle defined by three pairs of x,y coordinates
-#   p is a point represented by a pair of x,y coordinates
 def tri_contains_point(t, p):
+    """
+    Determine whether the given triangle contains the given point. May raise ValueError.
+
+    Arguments:
+    t is a Triangle object
+    p is a Point object
+
+    Returns:
+    True if t contains p and False otherwise.
+    """
     # Validate inputs
     # Invalid triangle or invalid point
     if len(t) != 3 or len(p) != 2:
@@ -294,10 +425,18 @@ def tri_contains_point(t, p):
         return False
 
 
-# Calculate the circumcenter of a triangle
-#   t is a triangle represented by a 3-tuple of x,y coordinates
-#   Returns an x,y coordiante pair describing the circumcenter of the triangle
 def tri_circumcenter(t):
+    """
+    Calculate the circumcenter of a triangle.
+
+    The circumcenter is the point where the perpendicular bisectors of the edges intersect.
+
+    Arguments:
+    t is a vertex-defined Triangle object
+
+    Returns:
+    A Point object representing the circumcenter of t
+    """
     # The circumcenter of the triangle is the point where the perpendicular bisectors of the sides intersect
     # Define the sides we care about
     A = LineSegment(t.a, t.b)
@@ -336,43 +475,65 @@ def tri_circumcenter(t):
     return center
 
 
-# Calculate the centroid of a triangle
-#   t is a triangle represented by a 3-tuple of x,y coordinates
-#   Returns an x,y coordiante pair describing the centroid of the triangle
 def tri_centroid(t):
-    # Centroid is just the mean of the vertices
+    """
+    Calculate the centroid of a triangle.
+
+    The centroid of a triangle is the mean of its vertices.
+
+    Arguments:
+    t is a vertex-defined Triangle object
+
+    Returns:
+    A Point object representing the centroid of the triangle.
+    """
     return Point(
         ((t.a.x + t.b.x + t.c.x)/3),
         ((t.a.y + t.b.y + t.c.y)/3)
     )
 
 
-# Calculate the circumcircle of a triangle
-#   t is a triangle represented by a 3-tuple of x,y coordinates
-#   Returns the circumcircle of tri represented by a 2-tuple consisting of the center and radius ((x,y), r)
 def tri_circumcircle(t):
+    """
+    Calculate the circumcircle of a triangle.
+
+    The radius of the circumcircle is the distance from the circumcenter to any vertex.
+
+    Arguments:
+    t is a vertex-defined Triangle object
+
+    Returns:
+    A Circle object representing the circumcircle of t
+    """
     if type(t) is not Triangle:
         t = Triangle(
             Point(t[0][0], t[0][1]),
             Point(t[1][0], t[1][1]),
             Point(t[2][0], t[2][1])
         )
-    # Get the circumcenter of the triangle
+
     center = tri_circumcenter(t)
-    # The radius of the circle is just the distance from the center to any vertex
+    # Get the distance from the center to a vertex
     radius = sqrt((center.x - t.a.x)**2 + (center.y - t.a.y)**2)
+
     return Circle(center, radius)
 
 
-# Determine whether two triangles have any vertices in common
-#   t1 and t2 are two vertex-defined triangles
-#   Returns true if any vertices are shared and false otherwise
 def tri_share_vertices(t1, t2):
+    """
+    Determine whether two triangles have any vertices in common.
+
+    Arguments:
+    t1 and t2 are two vertex-defined Triangle objects
+
+    Returns:
+    True if any vertices are shared by the triangles and False otherwise
+    """
     # Identical triangles are easy to detect
     if t1 == t2:
         return True
 
-    # Iterate over the vertices in t1 and compare them to every vertex in t2
+    # Iterate over the vertices in t1 and compare each one to every vertex in t2
     for vertex1 in t1:
         for vertex2 in t2:
             if vertex1 == vertex2:
@@ -381,31 +542,48 @@ def tri_share_vertices(t1, t2):
     return False
 
 
-# Calculate the angle between two points
-#   a is a point represented by a pair of x,y coordinates
-#   b is also a point
-#   Returns the angle between a and b in radians
 def angle(a, b):
+    """
+    Calculate the angle between two points.
+
+    Arguments:
+    a and b are Point objects
+
+    Returns:
+    The angle between a and b in radians (float)
+    """
     if type(a) is not Point or type(b) is not Point:
         a = Point(a[0], a[1])
         b = Point(b[0], b[1])
     return atan2(b.y, b.x) - atan2(a.y, a.x)
 
 
-# Calculates the cross product of three points
-#   a is a point represented by a pair of x,y coordinates
-#   b is also a point
-#   c is also a point
-#   Returns the cross product of a, b, and c
 def cross_product(a, b, c):
+    """
+    Calculates the cross product of three points.
+
+    Note that this isn't actually a cross product, but I couldn't think of a better name after I wrote it.
+
+    Arguments:
+    a, b, and c are all Point objects
+
+    Returns:
+    The cross product of a, b, and c (float)
+    """
     return (b.x - a.x)*(c.y - a.y) - (b.y - a.y)*(c.x - a.x)
 
 
-# Translate a triangle in x and y
-#   t is a triangle represented by a 3-tuple of x,y coordinates
-#   d is a 2-tuple describing the translations in x and y (x, y)
-#   Returns a new triangle translated by d
 def translate_tri(t, d):
+    """
+    Translate a triangle in 2-d.
+
+    Arguments:
+    t is a vertex-defined Triangle object
+    d is a Vector object describing the desired translation
+
+    Returns:
+    A new Triangle object translated by d
+    """
     return Triangle(
         Point(t.a.x + d.x, t.a.y + d.y),
         Point(t.b.x + d.x, t.b.y + d.y),
@@ -413,11 +591,17 @@ def translate_tri(t, d):
     )
 
 
-# Scale a triangle from its center point by the given scale factor
-#   t is a triangle represented by a 3-tuple of x,y coordinates
-#   s is the scale factor
-#   Returns a new triangle scaled by s
 def scale_tri(t, s):
+    """
+    Scale a triangle from its center point by the given scale factor.
+
+    Arguments:
+    t is a vertex-defined Triangle object
+    s is the scale factor (float)
+
+    Returns:
+    A new Triangle object scaled by s
+    """
     centroid = tri_centroid(t)
     # Translate the vertices of the triangle as if the centroid were the origin
     trans_t = translate_tri(t, Vector(centroid.x * -1, centroid.y * -1))
@@ -432,11 +616,16 @@ def scale_tri(t, s):
     return scaled_t
 
 
-# Calculate the convex hull of a set of points
-#   points is a list of 2-tuples of x,y coordinates
-#   Returns the convex hull as a list of points presented by 2-tuples of x,y coordinate pairs
-#       i.e. h = [(x1,y1), (x2,y2), etc] .
 def convex_hull(points):
+    """
+    Calculate the convex hull of a set of points.
+
+    Arguments:
+    points is a list of 2-tuples of x,y coordinates
+
+    Returns:
+    The convex hull as a list of points represented by 2-tuples of x,y coordinate pairs, i.e. h = [(x1,y1), (x2,y2), etc] .
+    """
     # Find the point with the lowest y-coordinate
     # If there's a tie, the one with the lowest x-coordinate is chosen
     min_point = None
@@ -468,11 +657,16 @@ def convex_hull(points):
     return hull
 
 
-# Calculate a triangle that encloses a set of points -- note that the triangle may not contain any points in the given set
-#   points is a list of 2-tuples of x,y coordinates
-#   Returns a triangle represented as a triplet of points, which are pairs of x,y coordinates
-#       i.e. t = ((x1,y1), (x2,y2), (x3,y3))
 def enclosing_triangle(points):
+    """
+    Calculate a triangle that encloses a set of points -- note that the triangle may not contain any points in the given set.
+
+    Arguments:
+    points is a list of Point objects
+
+    Returns:
+    A vertex-defined Triangle object that encloses all of the points.
+    """
     # Find the convex hull that encloses the points
     hull = convex_hull(points)
     # If the hull only has three points, this is our triangle
@@ -526,10 +720,18 @@ def enclosing_triangle(points):
     return Triangle(a, b, c)
 
 
-# Calculate the Delaunay triangulation of a set of points using the Bowyer-Watson algorithm
-#   points is a list of 2-tuples of x,y coordinates
-#   Returns a list of triangles represented as triplets of x,y coordinates (i.e. t = ( ((x11,y11), (x12,y12), (x13,y13)), ((x21,y21), ...) ))
 def delaunay_triangulation(points):
+    """
+    Calculate the Delaunay triangulation of a set of points. May raise ValueError.
+
+    Currently using the Bowyer-Watson algorithm but might switch to something faster in the future. For the current algorithm, we pre-calculate all of the circumcircles of the triangles to speed things up.
+
+    Arguments:
+    points is a list of 2-tuples of x,y coordinates
+
+    Returns:
+    A list of vertex-defined Triangle objects (e.g. [t1, t2, t3, ...]) or None
+    """
     # Less than three points is impossible to triangulate
     if len(points) < 3:
         raise ValueError('Need at least three points to triangulate')
