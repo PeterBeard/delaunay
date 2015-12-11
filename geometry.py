@@ -41,6 +41,7 @@ Functions:
 from __future__ import division
 from collections import namedtuple
 from math import sqrt, atan2
+import numbers
 
 # A point has an x and a y coordinate
 Point = namedtuple('Point', 'x y')
@@ -67,21 +68,21 @@ def is_valid_segment(line):
     True if the segment is valid and False otherwise.
     """
     return (
-        type(line) is LineSegment or
-        type(line) is tuple or
-        type(line) is list
+        isinstance(line, LineSegment) or
+        isinstance(line, tuple) or
+        isinstance(line, list)
     ) and\
         len(line) == 2 and\
         (
-            type(line[0]) is tuple or
-            type(line[0]) is list or
-            type(line[0]) is Point
+            isinstance(line[0], tuple) or
+            isinstance(line[0], list) or
+            isinstance(line[0], Point)
         ) and\
         len(line[0]) == 2 and\
         (
-            type(line[1]) is tuple or
-            type(line[1]) is list or
-            type(line[1]) is Point
+            isinstance(line[0], tuple) or
+            isinstance(line[0], list) or
+            isinstance(line[0], Point)
         ) and\
         len(line[1]) == 2
 
@@ -239,7 +240,7 @@ def compare_tris(a, b):
     Also returns False for invalid input
     """
     # Only compare triangles
-    if (type(a) is not Triangle or type(b) is not Triangle) and (len(a) != 3 or len(b) != 3):
+    if (not isinstance(a, Triangle) or not isinstance(b, Triangle)) and (len(a) != 3 or len(b) != 3):
         return False
 
     if a == b:
@@ -402,7 +403,7 @@ def tri_contains_point(t, p):
     for v in t:
         if len(v) != 2:
             raise ValueError('Triangle vertices are not 2-tuples')
-        if (type(v[0]) != int and type(v[0]) != float) or (type(v[1]) != int and type(v[1]) != float):
+        if not isinstance(v[0], numbers.Number) or not isinstance(v[1], numbers.Number):
             raise ValueError('Triangle vertices are not numeric')
     # Error within 1ppm is acceptable
     epsilon = 1e-6
@@ -505,7 +506,7 @@ def tri_circumcircle(t):
     Returns:
     A Circle object representing the circumcircle of t
     """
-    if type(t) is not Triangle:
+    if not isinstance(t, Triangle):
         t = Triangle(
             Point(t[0][0], t[0][1]),
             Point(t[1][0], t[1][1]),
@@ -552,7 +553,7 @@ def angle(a, b):
     Returns:
     The angle between a and b in radians (float)
     """
-    if type(a) is not Point or type(b) is not Point:
+    if not isinstance(a, Point) or not isinstance(b, Point):
         a = Point(a[0], a[1])
         b = Point(b[0], b[1])
     return atan2(b.y, b.x) - atan2(a.y, a.x)

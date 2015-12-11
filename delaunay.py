@@ -28,7 +28,7 @@ def cart_to_screen(points, size):
     Returns:
     A list of Point objects or a Triangle object, depending on the type of the input
     """
-    if type(points) is Triangle:
+    if isinstance(points, Triangle):
         return Triangle(
             Point(points.a.x, size[1] - points.a.y),
             Point(points.b.x, size[1] - points.b.y),
