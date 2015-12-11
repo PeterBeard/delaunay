@@ -112,16 +112,18 @@ def slope(line):
     """
     try:
         return (line.end.y - line.start.y)/(line.end.x - line.start.x)
-    except:
-        # Raise an error if the input isn't a line segment
-        if not is_valid_segment(line):
-            raise ValueError('Input is not a line segment ((x1, y1), (x2, y2))')
+    # Catch exceptions and raise more helpful ones if possible
+    except ZeroDivisionError:
         # Raise an error if both points are the same
         if line.start == line.end:
             raise ValueError('Both points are the same')
         # Raise an error if dx = 0
         if line.start.x == line.end.x:
             raise ValueError('Line has infinite slope')
+    except AttributeError:
+        # Raise an error if the input isn't a line segment
+        if not is_valid_segment(line):
+            raise ValueError('Input is not a line segment ((x1, y1), (x2, y2))')
 
 
 def perp_slope(line):
@@ -135,18 +137,20 @@ def perp_slope(line):
     The slope of the perpendicular line (float)
     """
     try:
-        # Perpendicular slppe is the negative reciprocal of the slope, i.e. -dx/dy
+        # Perpendicular slope is the negative reciprocal of the slope, i.e. -dx/dy
         return -1*(line.end.x - line.start.x)/(line.end.y - line.start.y)
-    except:
-        # Raise an error if the input isn't a line segment
-        if not is_valid_segment(line):
-            raise ValueError('Input is not a line segment ((x1, y1), (x2, y2))')
+    # Catch exceptions and raise more helpful ones if possible
+    except ZeroDivisionError:
         # Raise an error if both points are the same
         if line.start == line.end:
             raise ValueError('Both points are the same')
         # Raise an error if dy = 0
         if line.start.y == line.end.y:
             raise ValueError('Line has zero slope')
+    except AttributeError:
+        # Raise an error if the input isn't a line segment
+        if not is_valid_segment(line):
+            raise ValueError('Input is not a line segment ((x1, y1), (x2, y2))')
 
 
 def point_slope_to_y_intercept(m, p):
@@ -206,8 +210,8 @@ def lines_intersection(a, b):
         x = (b.yintercept - a.yintercept)/(a.slope - b.slope)
         y = a.slope * x + a.yintercept
         return Point(x, y)
-    except:
-        # Lines are either parallel or invalid. Either way, the intersection doesn't exist
+    # Division by zero means the lines are parallel
+    except ZeroDivisionError:
         return None
 
 
@@ -747,7 +751,8 @@ def delaunay_triangulation(points):
     if not supertriangle:
         return None
 
-    # The graph is a list of 2-tuples; the first element of each 2-tuple is a triangle and the second element is its circumcircle.
+    # The graph is a list of 2-tuples; the first element of each 2-tuple is a
+    # triangle and the second element is its circumcircle.
     # This saves us considerable time in recalculating the circles
     graph = [(supertriangle, tri_circumcircle(supertriangle))]
     # Add points to the graph one at a time
@@ -755,10 +760,7 @@ def delaunay_triangulation(points):
         # Find the triangles that contain the point
         invalid_triangles_vertices = []
         invalid_triangles_edges = []
-        for pair in graph:
-            t = pair[0]
-            circumcircle = pair[1]
-
+        for (t, circumcircle) in graph:
             if sqrt((circumcircle.center.x-p.x)**2+(circumcircle.center.y-p.y)**2) <= circumcircle.radius:
                 # Add the triangle to the list
                 invalid_triangles_edges.append(vertices_to_edges(t))
