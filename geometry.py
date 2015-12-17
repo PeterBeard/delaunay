@@ -18,6 +18,7 @@ Functions:
     point_slope_to_y_intercept(m, p): convert a line segment from point-slope to y-intercept form
     is_vertical(line): determine whether a line segment is vertical
     is_horizontal(line): determine whether a line segment is horizontal
+    is_collinear(a, b, c): determine whether three points are collinear
     lines_intersection(a, b): find the point where two lines intersect
     line_intersect_vertical(line, point): find the y-coordinate where a line intersects a vertical line
     compare_tris(a, b): determine whether two triangles are equivalent
@@ -193,6 +194,29 @@ def is_horizontal(l):
     True if the line is horizontal and False otherwise.
     """
     return l.start.y == l.end.y
+
+
+def is_collinear(a, b, c):
+    """
+    Determine whether three points are collinear (lie on the same line)
+
+    Three points are collinear if the determinant of this matrix is zero:
+
+    1  x1  y1
+    1  x2  y2
+    1  x3  y3
+
+    Arguments:
+    a is a Point object
+    b is a Point object
+    c is a Point object
+
+    Returns:
+    True if the points are collinear and False otherwise
+    """
+    # Calculate the determinant (https://en.wikipedia.org/wiki/Determinant)
+    det = b.x*c.y + a.x*b.y + a.y*c.x - a.y*b.x - a.x*c.y - b.y*c.x
+    return det == 0
 
 
 def lines_intersection(a, b):
@@ -522,6 +546,9 @@ def tri_circumcircle(t):
         )
 
     center = tri_circumcenter(t)
+    if not center:
+        return None
+
     # Get the distance from the center to a vertex
     radius = sqrt((center.x - t.a.x)**2 + (center.y - t.a.y)**2)
 
@@ -687,7 +714,7 @@ def enclosing_triangle(points):
         )
     # Convert the hull from a list of points to a list of edges
     edges = []
-    for p in range(0, len(hull)):
+    for p in xrange(0, len(hull)):
         edges.append(LineSegment(hull[p-1], hull[p]))
     triangle = None
     # This is not a fast way to do it, but it works and is way easier to implement than the O(n) algorithm
@@ -791,7 +818,7 @@ def delaunay_triangulation(points):
                 i += 1
         # Re-triangulate the hole made by the new point
         for e in hole:
-            if e[0] != p and e[1] != p:
+            if e[0] != p and e[1] != p and not is_collinear(e[0], e[1], p):
                 t = triangle_from_edge_point(e, p)
                 graph.append((t, tri_circumcircle(t)))
     # Delete the supertriangle from the graph
