@@ -14,7 +14,7 @@ Functions:
     midpoint(line): find the midpoint of a line segment
     slope(line): find the slope of a line segment
     perp_slope(line): find the perpendicular slope of a line segment
-    point_slope_to_y_intercept(m, p): convert a line segment from point-slope to y-intercept form
+    point_slope_to_y_intercept(m, p): convert a line from point-slope to y-intercept form
     is_vertical(line): determine whether a line segment is vertical
     is_horizontal(line): determine whether a line segment is horizontal
     is_collinear(a, b, c): determine whether three points are collinear
@@ -36,12 +36,12 @@ Functions:
     scale_tri(t, s): scale a triangle by the given scale factor
     convex_hull(p): find the convex hull of a set of points
     enclosing_triangle(p): find a triangle enclosing a set of points
-    delaunay_triangulation(p): find the Delaunay triangulation of a set of points
+    delaunay_triangulation(p): find the Delaunay triangulation of the points p
 """
 from __future__ import division
 from collections import namedtuple
 from math import sqrt, atan2
-import numbers
+
 
 # A point has an x and a y coordinate
 Point = namedtuple('Point', 'x y')
@@ -418,7 +418,6 @@ def tri_circumcenter(t):
     Returns:
     A Point object representing the circumcenter of t
     """
-    # The circumcenter of the triangle is the point where the perpendicular bisectors of the sides intersect
     # Define the sides we care about
     A = LineSegment(t.a, t.b)
     B = LineSegment(t.b, t.c)
@@ -426,17 +425,18 @@ def tri_circumcenter(t):
     # Calculate the midpoints
     mp_a = midpoint(A)
     mp_b = midpoint(B)
-    # Calculate the perpendicular slopes -- we only care about two PBs since the third will intersect them at the same point
-    # If one of the lines is horizontal then its PB has infinite slope. We need to handle this case separately
-    # We also need to handle the case where one of the sides is vertical, i.e. its PB is horizontal
+    # Calculate the perpendicular slopes -- we only care about two PBs since
+    # the third will intersect them at the same point. If one of the lines is
+    # horizontal then its PB has infinite slope. We need to handle this case
+    # separately. We also need to handle the case where one of the sides is
+    # vertical, i.e. its PB is horizontal.
     # This assumes that the triangle is valid; i.e. no sides are parallel
     if is_vertical(A):
         ma = 0
     elif is_horizontal(A):
         # Find where B intersects a vertical line through mp_a
         mb = perp_slope(B)
-        center = line_intersect_vertical(point_slope_to_y_intercept(mb, mp_b), mp_a)
-        return center
+        return line_intersect_vertical(point_slope_to_y_intercept(mb, mp_b), mp_a)
     else:
         ma = perp_slope(A)
 
@@ -446,14 +446,15 @@ def tri_circumcenter(t):
     elif is_horizontal(B):
         # Find where B intersects a vertical line through mp_a
         ma = perp_slope(A)
-        center = line_intersect_vertical(point_slope_to_y_intercept(ma, mp_a), mp_b)
-        return center
+        return line_intersect_vertical(point_slope_to_y_intercept(ma, mp_a), mp_b)
     else:
         mb = perp_slope(B)
 
     # Find the intersection of these lines
-    center = lines_intersection(point_slope_to_y_intercept(ma, mp_a), point_slope_to_y_intercept(mb, mp_b))
-    return center
+    return lines_intersection(
+        point_slope_to_y_intercept(ma, mp_a),
+        point_slope_to_y_intercept(mb, mp_b)
+    )
 
 
 def tri_centroid(t):
@@ -484,7 +485,7 @@ def tri_circumcircle(t):
     t is a vertex-defined Triangle object
 
     Returns:
-    A Circle object representing the circumcircle of t or None if no circumcircle exists
+    A Circle object representing the circumcircle or None if it doesn't exist
     """
     center = tri_circumcenter(t)
     if center is None:
@@ -547,7 +548,8 @@ def cross_product(a, b, c):
     """
     Calculates the cross product of three points.
 
-    Note that this isn't actually a cross product, but I couldn't think of a better name after I wrote it.
+    Note that this isn't actually a cross product, but I couldn't think of a
+    better name after I wrote it.
 
     Arguments:
     a, b, and c are all Point objects
@@ -609,25 +611,20 @@ def convex_hull(points):
     points is a list of 2-tuples of x,y coordinates
 
     Returns:
-    The convex hull as a list of points represented by 2-tuples of x,y coordinate pairs, i.e. h = [(x1,y1), (x2,y2), etc] .
+    The convex hull as a list of points represented by 2-tuples of x,y
+    coordinate pairs, i.e. h = [(x1,y1), (x2,y2), etc].
     """
     # Find the point with the lowest y-coordinate
     # If there's a tie, the one with the lowest x-coordinate is chosen
-    min_point = None
-    min_i = None
-    i = -1
+    min_point = points[-1]
     for p in points:
-        i += 1
-        if min_point is None or p.y <= min_point.y:
-            if min_point and p.y == min_point.y:
-                if p.x < min_point.x:
-                    min_point = p
-                    min_i = i
-            else:
-                min_point = p
-                min_i = i
+        if p.y < min_point.y:
+            min_point = p
+        elif p.y == min_point.y and p.x < min_point.x:
+            min_point = p
+
     points_copy = points[::1]
-    del points_copy[min_i]
+    points_copy.remove(min_point)
     # Next, sort the points by angle (asc) relative to the minimum point
     spoints = [min_point] + sorted(points_copy, key=lambda x: angle(min_point, x))
     # Now we start iterating over the points, considering them three at a time
@@ -666,13 +663,15 @@ def enclosing_triangle(points):
     for p in xrange(0, len(hull)):
         edges.append(LineSegment(hull[p-1], hull[p]))
     triangle = None
-    # This is not a fast way to do it, but it works and is way easier to implement than the O(n) algorithm
+    # This is not a fast way to do it, but it works and is way easier to
+    # implement than the O(n) algorithm
     for i in edges:
         for j in edges:
             for k in edges:
                 # Make sure we've picked three different edges
                 if i != j and i != k and j != k:
-                    # Create a triangle with three edges flush with the current edges of the bounding polygon
+                    # Create a triangle with three edges flush with the
+                    # current edges of the bounding polygon
                     # Calculate the vertices of this triangle
                     triangle = calculate_tri_vertices(i, j, k)
                     # Make sure it contains all the points
@@ -684,13 +683,15 @@ def enclosing_triangle(points):
                                 break
                         if contains_all:
                             return triangle
-    # We couldn't find a bounding triangle, but we can still find a bounding rectangle and convert it to a triangle
+    # We couldn't find a bounding triangle, but we can still find a bounding
+    # rectangle and convert it to a triangle
     xmin = min([p.x for p in points])
     xmax = max([p.x for p in points])
     ymin = min([p.y for p in points])
     ymax = max([p.y for p in points])
 
-    # Use the bottom side as the base of the triangle and construct edges that pass through the two top points
+    # Use the bottom side as the base of the triangle and construct edges that
+    # pass through the two top points
     top_left = Point(xmin-1, ymax+1)
     top_right = Point(xmax+1, ymax+1)
     # Calculate equations for the edges
@@ -709,7 +710,9 @@ def delaunay_triangulation(points):
     """
     Calculate the Delaunay triangulation of a set of points. May raise ValueError.
 
-    Currently using the Bowyer-Watson algorithm but might switch to something faster in the future. For the current algorithm, we pre-calculate all of the circumcircles of the triangles to speed things up.
+    Currently using the Bowyer-Watson algorithm but might switch to something
+    faster in the future. For the current algorithm, we pre-calculate all of
+    the circumcircles of the triangles to speed things up.
 
     Arguments:
     points is a list of 2-tuples of x,y coordinates
@@ -722,12 +725,15 @@ def delaunay_triangulation(points):
         raise ValueError('Need at least three points to triangulate')
     # Three points is the simplest case
     if len(points) == 3:
-        return [tuple(points)]
+        return [Triangle(points[0], points[1], points[2])]
     # Start with a triangle large enough to contain all of the points
     scale_factor = 1.5
-    supertriangle = scale_tri(enclosing_triangle(points), scale_factor)
+    supertriangle = enclosing_triangle(points)
     if supertriangle is None:
         return None
+
+    # Scale the enclosing triangle
+    supertriangle = scale_tri(supertriangle, scale_factor)
 
     # The graph is a list of 2-tuples; the first element of each 2-tuple is a
     # triangle and the second element is its circumcircle.
@@ -740,26 +746,26 @@ def delaunay_triangulation(points):
         invalid_triangles_edges = []
         for (t, circumcircle) in graph:
             if sqrt((circumcircle.center.x-p.x)**2+(circumcircle.center.y-p.y)**2) <= circumcircle.radius:
-                # Add the triangle to the list
                 invalid_triangles_edges.append(vertices_to_edges(t))
                 invalid_triangles_vertices.append((t, circumcircle))               # Keep the circumcircle so we can remove the item later
         # There is a polygonal hole around the new point. Find its edges
         hole = []
         for t in invalid_triangles_edges:
             for e in t:
-                # Make sure the edge is unique
+                # Make sure the edge is unique and add it to the hole if it is
                 unique = True
                 for u in invalid_triangles_edges:
                     # Tried using reversed(e), but it returns an iterable and not a tuple
                     if (e in u or e[::-1] in u) and u != t:
                         unique = False
                         break
-                # If the edge is unique, add it to the hole
+
                 if unique:
                     hole.append(e)
+
         # Delete the invalid triangles from the graph
-        for t, c in invalid_triangles_vertices:
-            graph.remove((t, c))
+        for pair in invalid_triangles_vertices:
+            graph.remove(pair)
 
         # Re-triangulate the hole made by the new point
         for e in hole:
@@ -772,7 +778,4 @@ def delaunay_triangulation(points):
             graph.remove((t, c))
 
     # Clean up the graph data structure, removing all of the circumcircles
-    clean_graph = [t[0] for t in graph]
-
-    # Return the graph
-    return clean_graph
+    return [t[0] for t in graph]
