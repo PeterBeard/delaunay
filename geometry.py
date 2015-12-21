@@ -11,7 +11,6 @@ Types:
     Circle: circle defined by its center point and radius
 
 Functions:
-    is_valid_segment(line): check a line segment for validity
     midpoint(line): find the midpoint of a line segment
     slope(line): find the slope of a line segment
     perp_slope(line): find the perpendicular slope of a line segment
@@ -22,11 +21,11 @@ Functions:
     lines_intersection(a, b): find the point where two lines intersect
     line_intersect_vertical(line, point): find the y-coordinate where a line intersects a vertical line
     compare_tris(a, b): determine whether two triangles are equivalent
-    calculate_tri_vertices(a, b, c): calculate the vertices of a triangle defined by the given line segments
+    calculate_tri_vertices(a, b, c): calculate the vertices of a triangle defined by the segments a, b, c
     triangle_from_edge_point(e, p): calculate a triangle from the given line segment and point
     vertices_to_edges(tri): convert a triangle from vertex form to edge form
     edges_to_vertices(tri): convert a triangle from edge form to vertex form
-    tri_contains_point(tri, point): determine whether a triangle contains a point
+    tri_contains_point(tri, point): determine whether tri contains point
     tri_circumcenter(tri): find the circumcenter of a triangle
     tri_centroid(tri): find the centroid of a triangle
     tri_circumcircle(tri): find the circumcircle of a triangle
@@ -56,36 +55,6 @@ Line = namedtuple('Line', 'slope yintercept')
 Triangle = namedtuple('Triangle', 'a b c')
 # A circle is defined by its radius and center
 Circle = namedtuple('Circle', 'center radius')
-
-
-def is_valid_segment(line):
-    """
-    Determine whether line is a valid line segment.
-
-    Arguments:
-    line is a 2-tuple of x,y coordinates, e.g. ((x1, y1), (x2, y2))
-
-    Returns:
-    True if the segment is valid and False otherwise.
-    """
-    return (
-        isinstance(line, LineSegment) or
-        isinstance(line, tuple) or
-        isinstance(line, list)
-    ) and\
-        len(line) == 2 and\
-        (
-            isinstance(line[0], tuple) or
-            isinstance(line[0], list) or
-            isinstance(line[0], Point)
-        ) and\
-        len(line[0]) == 2 and\
-        (
-            isinstance(line[0], tuple) or
-            isinstance(line[0], list) or
-            isinstance(line[0], Point)
-        ) and\
-        len(line[1]) == 2
 
 
 def midpoint(line):
@@ -121,16 +90,12 @@ def slope(line):
         # Return None if the line is vertical
         if line.start.x == line.end.x:
             return None
-    except AttributeError:
-        # Raise an error if the input isn't a line segment
-        if not is_valid_segment(line):
-            raise ValueError('Input is not a line segment ((x1, y1), (x2, y2))')
 
 
 def perp_slope(line):
     """
     Find the slope of a line perpendicular to a line segment. May raise ValueError.
-    
+
     Arguments:
     line is a 2-tuple of x,y coordinates, e.g. ((x1, y1), (x2, y2))
 
@@ -138,7 +103,7 @@ def perp_slope(line):
     The slope of the perpendicular line (float) or None for horizontal lines
     """
     try:
-        # Perpendicular slope is the negative reciprocal of the slope, i.e. -dx/dy
+        # Perpendicular slope is the negative reciprocal of the slope (-dx/dy)
         return -1*(line.end.x - line.start.x)/(line.end.y - line.start.y)
     # Catch exceptions and raise more helpful ones if possible
     except ZeroDivisionError:
@@ -148,16 +113,12 @@ def perp_slope(line):
         # Return None if the line is horizontal
         if line.start.y == line.end.y:
             return None
-    except AttributeError:
-        # Raise an error if the input isn't a line segment
-        if not is_valid_segment(line):
-            raise ValueError('Input is not a line segment ((x1, y1), (x2, y2))')
 
 
 def point_slope_to_y_intercept(m, p):
     """
     Convert a line from point-slope form to y-intercept form.
-    
+
     The y-intercept is calculated as b = y - mx
 
     Arguments:
@@ -283,15 +244,16 @@ def compare_tris(a, b):
     True if both triangles have the same vertices and False otherwise
     Also returns False for invalid input
     """
-    # Only compare triangles
-    if (not isinstance(a, Triangle) or not isinstance(b, Triangle)) and (len(a) != 3 or len(b) != 3):
-        return False
-
+    # Simplest case
     if a == b:
         return True
 
     # Order doesn't matter; triangles are the same if they have the same vertices
     if a[0] in b and a[1] in b and a[2] in b:
+        return True
+
+    # Try reversing edges for edge-defined triangles
+    if a[0][::-1] in b and a[1][::-1] in b and a[2][::-1] in b:
         return True
 
     return False
@@ -307,10 +269,6 @@ def calculate_tri_vertices(side_a, side_b, side_c):
     Returns:
     A vertex-defined Triangle or None.
     """
-    # Make sure the inputs are line segments
-    if not is_valid_segment(side_a) or not is_valid_segment(side_b) or not is_valid_segment(side_c):
-        return None
-
     # Calculate slopes and y-intercepts of the sides
     A = line_from_segment(side_a)
     B = line_from_segment(side_b)
@@ -427,16 +385,6 @@ def tri_contains_point(t, p):
     Returns:
     True if t contains p and False otherwise.
     """
-    # Validate inputs
-    # Invalid triangle or invalid point
-    if len(t) != 3 or len(p) != 2:
-        raise ValueError('Triangle does not have three vertices')
-    # Triangle defined by edges:
-    for v in t:
-        if len(v) != 2:
-            raise ValueError('Triangle vertices are not 2-tuples')
-        if not isinstance(v[0], numbers.Number) or not isinstance(v[1], numbers.Number):
-            raise ValueError('Triangle vertices are not numeric')
     # Error within 1ppm is acceptable
     epsilon = 1e-6
     # Calcula1te the barycentric coordinates of p
@@ -536,21 +484,25 @@ def tri_circumcircle(t):
     t is a vertex-defined Triangle object
 
     Returns:
-    A Circle object representing the circumcircle of t
+    A Circle object representing the circumcircle of t or None if no circumcircle exists
     """
-    if not isinstance(t, Triangle):
-        t = Triangle(
-            Point(t[0][0], t[0][1]),
-            Point(t[1][0], t[1][1]),
-            Point(t[2][0], t[2][1])
-        )
-
     center = tri_circumcenter(t)
-    if not center:
-        return None
+    if center is None:
+        # Points might be collinear
+        if is_collinear(t[0], t[1], t[2]):
+            min_x = min([v.x for v in t])
+            min_y = min([v.y for v in t])
+            max_x = max([v.x for v in t])
+            max_y = max([v.y for v in t])
 
-    # Get the distance from the center to a vertex
-    radius = sqrt((center.x - t.a.x)**2 + (center.y - t.a.y)**2)
+            center = Point((max_x - min_x)/2, (max_y - min_y)/2)
+            radius = sqrt((center.x - max_x)**2 + (center.y - max_y)**2)
+            return Circle(center, radius)
+        else:
+            return None
+    else:
+        # Get the distance from the center to a vertex
+        radius = sqrt((center.x - t.a.x)**2 + (center.y - t.a.y)**2)
 
     return Circle(center, radius)
 
@@ -588,9 +540,6 @@ def angle(a, b):
     Returns:
     The angle between a and b in radians (float)
     """
-    if not isinstance(a, Point) or not isinstance(b, Point):
-        a = Point(a[0], a[1])
-        b = Point(b[0], b[1])
     return atan2(b.y, b.x) - atan2(a.y, a.x)
 
 
@@ -688,7 +637,7 @@ def convex_hull(points):
         while len(hull) > 1 and cross_product(hull[-2], hull[-1], p) <= 0:
             hull.pop()
         # Add the point to the hull
-        if not hull or p != hull[-1]:
+        if hull is None or p != hull[-1]:
             hull.append(p)
     return hull
 
@@ -777,7 +726,7 @@ def delaunay_triangulation(points):
     # Start with a triangle large enough to contain all of the points
     scale_factor = 1.5
     supertriangle = scale_tri(enclosing_triangle(points), scale_factor)
-    if not supertriangle:
+    if supertriangle is None:
         return None
 
     # The graph is a list of 2-tuples; the first element of each 2-tuple is a
@@ -793,7 +742,7 @@ def delaunay_triangulation(points):
             if sqrt((circumcircle.center.x-p.x)**2+(circumcircle.center.y-p.y)**2) <= circumcircle.radius:
                 # Add the triangle to the list
                 invalid_triangles_edges.append(vertices_to_edges(t))
-                invalid_triangles_vertices.append(t)
+                invalid_triangles_vertices.append((t, circumcircle))               # Keep the circumcircle so we can remove the item later
         # There is a polygonal hole around the new point. Find its edges
         hole = []
         for t in invalid_triangles_edges:
@@ -809,25 +758,18 @@ def delaunay_triangulation(points):
                 if unique:
                     hole.append(e)
         # Delete the invalid triangles from the graph
-        for t in invalid_triangles_vertices:
-            i = 0
-            while i < len(graph):
-                if t == graph[i][0]:
-                    del graph[i]
-                    break
-                i += 1
+        for t, c in invalid_triangles_vertices:
+            graph.remove((t, c))
+
         # Re-triangulate the hole made by the new point
         for e in hole:
-            if e[0] != p and e[1] != p and not is_collinear(e[0], e[1], p):
+            if e[0] != p and e[1] != p:
                 t = triangle_from_edge_point(e, p)
                 graph.append((t, tri_circumcircle(t)))
     # Delete the supertriangle from the graph
-    i = 0
-    while i < len(graph):
-        if tri_share_vertices(graph[i][0], supertriangle):
-            del graph[i]
-            i -= 1
-        i += 1
+    for t, c in graph:
+        if tri_share_vertices(t, supertriangle):
+            graph.remove((t, c))
 
     # Clean up the graph data structure, removing all of the circumcircles
     clean_graph = [t[0] for t in graph]
