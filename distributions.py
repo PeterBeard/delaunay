@@ -40,6 +40,12 @@ def generate_random_points(count, area, scale=1, decluster=True):
         for __ in range(0, n_extra_points)
     ]
 
+    # Add a few boundary points for nicer graph edges
+    points.append(Point(-100, -100))
+    points.append(Point(-100, area[1]+100))
+    points.append(Point(area[0]+100, -100))
+    points.append(Point(area[0]+100, area[1]+100))
+
     return points
 
 
@@ -126,6 +132,7 @@ def generate_halton_points(count, area, p=2, q=3):
     """
     Generate points using the p,q Halton sequence.
 
+    https://en.wikipedia.org/wiki/Halton_sequence
     A Halton sequence is a quasi-random sequence that uses one prime number for
     each dimension as a base. For example, the 2,3 Halton sequence
     (the default) looks like this:
@@ -162,7 +169,7 @@ def generate_halton_points(count, area, p=2, q=3):
             fy /= q
             ry += fy * (iy % q)
             iy = int(iy/q)
-        
+
         # Scale the point and add to the list
         points.append(Point(rx*area[0], ry*area[1]))
 
