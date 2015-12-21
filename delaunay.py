@@ -13,9 +13,9 @@ from random import randrange
 import sys
 import argparse
 from collections import namedtuple
-from math import sqrt, ceil
-from fractions import gcd
+from math import sqrt
 from geometry import delaunay_triangulation, tri_centroid, Point, Triangle
+from distributions import *
 
 # Some types to make things a little easier
 Color = namedtuple('Color', 'r g b')
@@ -71,171 +71,6 @@ def calculate_color(grad, val):
     return Color(r, g, b)
 
 
-def generate_random_points(n_points, area, scale=1, decluster=True):
-    """
-    Generate a random set of points to triangulate.
-
-    Arguments:
-    n_points is the number of points to generate (int)
-    area is a 2-tuple of the maximum x and y values of the field
-    scale is a value that describes how much of the area to fill with points
-       -- values greater than 1 will result in points outside the area
-       -- values less than 1 result in a set of points bounded by scale*area
-       -- Default is 1
-    decluster is a boolean flag; declustering happens if it's True (default True)
-
-    Returns:
-    A list of Point objects
-    """
-    # Generate random points
-    # Extra points are generated so we can de-cluster later
-    if decluster:
-        cluster_fraction = 2
-    else:
-        cluster_fraction = 1
-
-    # Scale the bounding rectangle
-    bound_x, bound_y = int(area[0]*scale), int(area[1]*scale)
-    # Generate some random points within the bounding rectangle
-    n_extra_points = int(cluster_fraction*n_points)
-    points = [
-        Point(int(randrange(bound_x)),
-         int(randrange(bound_y)))
-        for __ in range(0, n_extra_points)
-    ]
-
-    # De-cluster the points
-    # -- Points are sorted by distance to nearest neighbor
-    # -- Points with the closest neighbors (i.e. clusters) are removed
-    if decluster:
-        # Sort the points by distance to the nearest point
-        sorted_points = []
-        for p in points:
-            d = None
-            # Find the minimum distance to another point
-            for q in points:
-                if q == p:
-                    break
-                q_d = sqrt((p.x-q.x)**2+(p.y-q.y)**2)
-                if not d or q_d < d:
-                    d = q_d
-            if d:
-                # Insert the distance-point pair into the array
-                if not sorted_points:
-                    sorted_points.append((d, p))
-                # Does it go at the end of the list?
-                elif d > sorted_points[-1][0]:
-                    sorted_points.append((d, p))
-                else:
-                    i = 0
-                    while i < len(sorted_points):
-                        if sorted_points[i][0] < d:
-                            i += 1
-                        else:
-                            sorted_points.insert(i, (d, p))
-                            break
-        # Remove the most clustered points
-        for i in range(0, (n_extra_points - n_points)):
-            del sorted_points[0]
-        # Put the remaining points back into a flat list
-        points = [p[1] for p in sorted_points]
-
-    # We add four "overscan" points so the edges of the image get colored
-    points.append(Point(-300, -10))
-    points.append(Point(area[0]+10, -300))
-    points.append(Point(area[0]+300, area[1]+10))
-    points.append(Point(-100, area[1]+300))
-
-    return points
-
-
-def generate_grid_points(n_points, area):
-    """
-    Generate a rectangular grid of points.
-
-    Arguments:
-    n_points is the number of points to generate (int)
-    area is a 2-tuple of the maximum x and y values of the field
-
-    Returns:
-    A list of Point objects.
-    """
-    points = []
-
-    # Find the GCD of x and y and factor it out
-    k = gcd(area[0], area[1])
-    reduced_x = area[0]/k
-    reduced_y = area[1]/k
-
-    # Find a number of points that will make a nice grid
-    n_points_x = ceil(sqrt(n_points*reduced_x))
-    n_points_y = ceil(sqrt(n_points*reduced_y))
-
-    x_spacing = max(ceil(area[0]/n_points_x), 1)
-    y_spacing = max(ceil(area[1]/n_points_y), 1)
-
-    y = 0
-    while y <= area[1]+y_spacing:
-        x = 0
-        while x <= area[0]+x_spacing:
-            points.append(Point(x, y))
-            x += x_spacing
-        y += y_spacing
-
-    return points
-
-
-def generate_equilateral_points(n_points, area):
-    """
-    Generate a set of points that will triangulate to equilateral triangles.
-
-    To get equilateral triangles, the grid has to be offset so that every
-    other line is advanced by half the x-spacing. For example, a grid like
-
-    *   *   *   *
-      *   *   * 
-    *   *   *   *
-
-    Will result in equilateral triangles.
-
-    Arguments:
-    n_points is the number of points to generate
-    area is a 2-tuple describing the boundaries of the field in x and y
-
-    Returns:
-    A list of Point objects
-    """
-    points = []
-
-    # Figure out roughly how many points we need in x
-    n_points_x = ceil(sqrt(n_points))
-
-    # Calculate the spacing
-    x_spacing = max(ceil(area[0]/n_points_x), 1)
-    x_offset = x_spacing/2
-    y_spacing = sqrt(x_spacing**2 - (x_spacing/2)**2)
-
-    # Generate the points
-    xmax = area[0]+x_spacing+x_offset
-    ymax = area[1]+y_spacing
-    y = 0
-    odd_row = False
-    while y <= ymax:
-        # Offset every other row for equilateral triangles
-        if odd_row:
-            x = -x_offset
-        else:
-            x = 0
-
-        while x <= xmax:
-            points.append(Point(int(x), int(y)))
-            x += x_spacing
-        odd_row = not odd_row
-        y += y_spacing
-
-    return points
-
-
 def draw_polys(draw, colors, polys, outline_color=None):
     """
     Draw a set of polygons to the screen using the given colors.
@@ -257,15 +92,17 @@ def draw_polys(draw, colors, polys, outline_color=None):
 def color_from_image(background_image, triangles):
     """
     Color a graph of triangles using the colors from an image.
-    
-    The color of each triangle is determined by the color of the image pixel at its centroid.
+
+    The color of each triangle is determined by the color of the image pixel at
+    its centroid.
 
     Arguments:
     background_image is a PIL Image object
     triangles is a list of vertex-defined Triangle objects
 
     Returns:
-    A list of Color objects, one per triangle such that colors[i] is the color of triangle[i]
+    A list of Color objects, one per triangle such that colors[i] is the color
+    of triangle[i]
     """
     colors = []
     pixels = background_image.load()
@@ -293,7 +130,8 @@ def color_from_gradient(gradient, image_size, triangles):
     triangles is a list of vertex-defined Triangle objects
 
     Returns:
-    A list of Color objects, one per triangle such that colors[i] is the color of triangle[i]
+    A list of Color objects, one per triangle such that colors[i] is the color
+    of triangle[i]
     """
     colors = []
     # The size of the screen
@@ -357,6 +195,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.set_defaults(output_filename='triangles.png')
     parser.set_defaults(n_points=100)
+    parser.set_defaults(distribution='uniform')
 
     # Value options
     parser.add_argument('-o', '--output', dest='output_filename', help='The filename to write the image to. Supported filetypes are BMP, TGA, PNG, and JPEG')
@@ -370,6 +209,7 @@ def main():
     # Flags
     parser.add_argument('-a', '--antialias', dest='antialias', action='store_true', help='If enabled, draw the image at 4x resolution and downsample to reduce aliasing.')
     parser.add_argument('-l', '--lines', dest='lines', action='store_true', help='If enabled, draw lines along the triangle edges.')
+    parser.add_argument('--distribution', dest='distribution', type=str, help='The desired distribution of the random points. Options are uniform (default) or Halton.')
     parser.add_argument('-d', '--decluster', dest='decluster', action='store_true', help='If enabled, try to avoid generating clusters of points in the triangulation. This will significantly slow down point generation.')
     parser.add_argument('-r', '--right', dest='right_tris', action='store_true', help='If enabled, generate right triangles rather than random ones.')
     parser.add_argument('-e', '--equilateral', dest='equilateral_tris', action='store_true', help='If enabled, generate equilateral triangles rather than random ones.')
@@ -419,9 +259,15 @@ def main():
     if options.equilateral_tris:
         points = generate_equilateral_points(npoints, size)
     elif options.right_tris:
-        points = generate_grid_points(npoints, size)
+        points = generate_rectangular_points(npoints, size)
     else:
-        points = generate_random_points(npoints, size, scale, options.decluster)
+        if options.distribution == 'uniform':
+            points = generate_random_points(npoints, size, scale, options.decluster)
+        elif options.distribution == 'halton':
+            points = generate_halton_points(npoints, size)
+        else:
+            print('Unrecognized distribution type.')
+            sys.exit(64)
 
     # Calculate the triangulation
     triangulation = delaunay_triangulation(points)
