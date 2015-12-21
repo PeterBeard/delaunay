@@ -726,19 +726,18 @@ def delaunay_triangulation(points):
     # Three points is the simplest case
     if len(points) == 3:
         return [Triangle(points[0], points[1], points[2])]
-    # Start with a triangle large enough to contain all of the points
-    scale_factor = 1.5
+
+    # Find a "supertriangle" that encloses all of the points
     supertriangle = enclosing_triangle(points)
     if supertriangle is None:
         return None
+    supertriangle = scale_tri(supertriangle, 2)
 
-    # Scale the enclosing triangle
-    supertriangle = scale_tri(supertriangle, scale_factor)
-
-    # The graph is a list of 2-tuples; the first element of each 2-tuple is a
-    # triangle and the second element is its circumcircle.
-    # This saves us considerable time in recalculating the circles
+    # The graph is a list of 2-tuples of the form (t, c), where t is a Triangle
+    # object and c is its circumcircle. Precalculating the circumcircles saves
+    # considerable time later on.
     graph = [(supertriangle, tri_circumcircle(supertriangle))]
+
     # Add points to the graph one at a time
     for p in points:
         # Find the triangles that contain the point
@@ -755,8 +754,7 @@ def delaunay_triangulation(points):
                 # Make sure the edge is unique and add it to the hole if it is
                 unique = True
                 for u in invalid_triangles_edges:
-                    # Tried using reversed(e), but it returns an iterable and not a tuple
-                    if (e in u or e[::-1] in u) and u != t:
+                    if u != t and (e in u or tuple(reversed(e)) in u):
                         unique = False
                         break
 
@@ -772,10 +770,6 @@ def delaunay_triangulation(points):
             if e[0] != p and e[1] != p:
                 t = triangle_from_edge_point(e, p)
                 graph.append((t, tri_circumcircle(t)))
-    # Delete the supertriangle from the graph
-    for t, c in graph:
-        if tri_share_vertices(t, supertriangle):
-            graph.remove((t, c))
 
     # Clean up the graph data structure, removing all of the circumcircles
     return [t[0] for t in graph]
