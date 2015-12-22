@@ -22,6 +22,36 @@ Color = namedtuple('Color', 'r g b')
 Gradient = namedtuple('Gradient', 'start end')
 
 
+def hex_to_color(hex_value):
+    """
+    Convert a hexadecimal representation of a color to an RGB triplet.
+
+    For example, the hex value FFFFFF corresponds to (255, 255, 255).
+
+    Arguments:
+    hex_value is a string containing a 6-digit hexadecimal color
+
+    Returns:
+    A Color object equivalent to the given hex value or None for invalid input
+    """
+    if hex_value is None:
+        return None
+
+    if hex_value[0] == '#':
+        hex_value = hex_value[1:]
+
+    hex_value = hex_value.lower()
+
+    red = hex_value[:2]
+    green = hex_value[2:4]
+    blue = hex_value[4:]
+
+    try:
+        return Color(int(red, 16), int(green, 16), int(blue, 16))
+    except ValueError:
+        return None
+
+
 def cart_to_screen(points, size):
     """
     Convert Cartesian coordinates to screen coordinates.
@@ -71,22 +101,55 @@ def calculate_color(grad, val):
     return Color(r, g, b)
 
 
-def draw_polys(draw, colors, polys, outline_color=None):
+def draw_polys(draw, colors, polys):
     """
     Draw a set of polygons to the screen using the given colors.
 
     Arguments:
     colors is a list of Color objects, one per polygon
     polys is a list of polygons defined by their vertices as x, y coordinates
-    outline_color is a Color object  describing the color of the outlines
-       -- No outlines are drawn if outline_color is None (the default)
     """
-    if outline_color:
-        for i in range(0, len(polys)):
-            draw.polygon(polys[i], outline=outline_color, fill=colors[i])
-    else:
-        for i in range(0, len(polys)):
-            draw.polygon(polys[i], fill=colors[i])
+    for i in range(0, len(polys)):
+        draw.polygon(polys[i], fill=colors[i])
+
+
+def draw_lines(draw, color, polys, line_thickness=1):
+    """
+    Draw the edges of the given polygons to the screen in the given color.
+
+    Arguments:
+    draw is an ImageDraw object
+    color is a Color tuple
+    polys is a list of vertices
+    line_thickness is the thickness of each line in px (default 1)
+    """
+    if line_thickness is None:
+        line_thickness = 1
+
+    for p in polys:
+        draw.line(p, color, line_thickness)
+
+
+def draw_points(draw, color, polys, vert_radius=16):
+    """
+    Draw the vertices of the given polygons to the screen in the given color.
+
+    Arguments:
+    draw is an ImageDraw object
+    color is a Color tuple
+    polys is a list of vertices
+    vert_radius is the radius of each vertex in px (default 16)
+    """
+    if vert_radius is None:
+        vert_radius = 16
+
+    for p in polys:
+        v1 = [p[0].x - vert_radius/2, p[0].y - vert_radius/2, p[0].x + vert_radius/2, p[0].y + vert_radius/2]
+        v2 = [p[1].x - vert_radius/2, p[1].y - vert_radius/2, p[1].x + vert_radius/2, p[1].y + vert_radius/2]
+        v3 = [p[2].x - vert_radius/2, p[2].y - vert_radius/2, p[2].x + vert_radius/2, p[2].y + vert_radius/2]
+        draw.ellipse(v1, color)
+        draw.ellipse(v2, color)
+        draw.ellipse(v3, color)
 
 
 def color_from_image(background_image, triangles):
@@ -209,6 +272,11 @@ def main():
     # Flags
     parser.add_argument('-a', '--antialias', dest='antialias', action='store_true', help='If enabled, draw the image at 4x resolution and downsample to reduce aliasing.')
     parser.add_argument('-l', '--lines', dest='lines', action='store_true', help='If enabled, draw lines along the triangle edges.')
+    parser.add_argument('--linethickness', dest='line_thickness', type=int, help='The thickness (in px) of edges drawn on the graph. Implies -l.')
+    parser.add_argument('--linecolor', dest='line_color', type=str, help='The color of edges drawn on the graph in hex (e.g. ffffff for white). Implies -l.')
+    parser.add_argument('-p', '--points', dest='points', action='store_true', help='If enabled, draw a circle for each vertex on the graph.')
+    parser.add_argument('--vertexradius', dest='vert_radius', type=int, help='The radius (in px) of the vertices drawn on the graph. Implies -p.')
+    parser.add_argument('--vertexcolor', dest='vert_color', type=str, help='The color of vertices drawn on the graph in hex (e.g. ffffff for white). Implies -p.')
     parser.add_argument('--distribution', dest='distribution', type=str, help='The desired distribution of the random points. Options are uniform (default) or Halton.')
     parser.add_argument('-d', '--decluster', dest='decluster', action='store_true', help='If enabled, try to avoid generating clusters of points in the triangulation. This will significantly slow down point generation.')
     parser.add_argument('-r', '--right', dest='right_tris', action='store_true', help='If enabled, generate right triangles rather than random ones.')
@@ -300,8 +368,12 @@ def main():
         size = (size[0] * aa_amount, size[1] * aa_amount)
         # Scale the graph
         trans_triangulation = [
-            [tuple(map(lambda x: x*aa_amount, v)) for v in p]
-            for p in trans_triangulation
+            Triangle(
+                Point(t.a.x * aa_amount, t.a.y * aa_amount),
+                Point(t.b.x * aa_amount, t.b.y * aa_amount),
+                Point(t.c.x * aa_amount, t.c.y * aa_amount)
+            )
+            for t in trans_triangulation
         ]
 
     # Create image object
@@ -309,10 +381,24 @@ def main():
     # Get a draw object
     draw = ImageDraw.Draw(image)
     # Draw the triangulation
-    if options.lines:
-        draw_polys(draw, colors, trans_triangulation, (255, 255, 255))
-    else:
-        draw_polys(draw, colors, trans_triangulation)
+    draw_polys(draw, colors, trans_triangulation)
+
+    if options.lines or options.line_thickness or options.line_color:
+        if options.line_color is None:
+            line_color = Color(255, 255, 255)
+        else:
+            line_color = hex_to_color(options.line_color)
+
+        draw_lines(draw, line_color, trans_triangulation, options.line_thickness)
+
+    if options.points or options.vert_radius or options.vert_color:
+        if options.vert_color is None:
+            vertex_color = Color(255, 255, 255)
+        else:
+            vertex_color = hex_to_color(options.vert_color)
+
+        draw_points(draw, vertex_color, trans_triangulation, options.vert_radius)
+
     # Resample the image using the built-in Lanczos filter
     if options.antialias:
         size = (int(size[0]/aa_amount), int(size[1]/aa_amount))
