@@ -8,6 +8,7 @@ usage: delaunay.py [-h] [-o OUTPUT_FILENAME] [-n N_POINTS] [-x WIDTH]
 
 Try delaunay.py --help for details.
 """
+from __future__ import print_function
 import sys
 
 # Detect python version before continuing
