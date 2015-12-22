@@ -8,10 +8,16 @@ usage: delaunay.py [-h] [-o OUTPUT_FILENAME] [-n N_POINTS] [-x WIDTH]
 
 Try delaunay.py --help for details.
 """
+import sys
+
+# Detect python version before continuing
+if sys.version_info[0] == 3:
+    print("delaunay.py only runs on Python 2.x")
+    sys.exit(78)
+
+import argparse
 from PIL import Image, ImageDraw
 from random import randrange
-import sys
-import argparse
 from collections import namedtuple
 from math import sqrt
 from geometry import delaunay_triangulation, tri_centroid, Point, Triangle
