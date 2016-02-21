@@ -31,7 +31,7 @@ Functions:
     tri_circumcircle(tri): find the circumcircle of a triangle
     tri_share_vertices(a, b): determine whether two triangles share any vertices
     angle(a, b): find the angle between two points
-    cross_product(a, b): find the cross product of three points
+    turn_direction(a, b): find the cross product of three points
     translate_tri(tri, vector): translate a triangle by the given vector
     scale_tri(t, s): scale a triangle by the given scale factor
     convex_hull(p): find the convex hull of a set of points
@@ -40,7 +40,7 @@ Functions:
 """
 from __future__ import division
 from collections import namedtuple
-from math import sqrt, atan2
+from math import sqrt, atan2, pi
 
 
 # A point has an x and a y coordinate
@@ -523,6 +523,7 @@ def tri_share_vertices(t1, t2):
         return True
 
     # Iterate over the vertices in t1 and compare each one to every vertex in t2
+    # TODO: Maybe use sets to speed this up
     for vertex1 in t1:
         for vertex2 in t2:
             if vertex1 == vertex2:
@@ -541,21 +542,21 @@ def angle(a, b):
     Returns:
     The angle between a and b in radians (float)
     """
-    return atan2(b.y, b.x) - atan2(a.y, a.x)
+    a = atan2(a.y - b.y, a.x - b.x)
+    return a
 
 
-def cross_product(a, b, c):
+def turn_direction(a, b, c):
     """
-    Calculates the cross product of three points.
-
-    Note that this isn't actually a cross product, but I couldn't think of a
-    better name after I wrote it.
+    Calculates the direction of a turn from a to c via b
 
     Arguments:
     a, b, and c are all Point objects
 
     Returns:
-    The cross product of a, b, and c (float)
+    Value > 0 if turn is counter-clockwise
+    0 if points are collinear
+    Value < 0 if turn is clockwise
     """
     return (b.x - a.x)*(c.y - a.y) - (b.y - a.y)*(c.x - a.x)
 
@@ -614,6 +615,13 @@ def convex_hull(points):
     The convex hull as a list of points represented by 2-tuples of x,y
     coordinate pairs, i.e. h = [(x1,y1), (x2,y2), etc].
     """
+    # Less than three points do not a polygon make
+    if len(points) < 3:
+        return None
+    # Three points is the simplest case
+    if len(points) == 3:
+        return points
+
     # Find the point with the lowest y-coordinate
     # If there's a tie, the one with the lowest x-coordinate is chosen
     min_point = points[-1]
@@ -627,21 +635,25 @@ def convex_hull(points):
     points_copy.remove(min_point)
     # Next, sort the points by angle (asc) relative to the minimum point
     spoints = [min_point] + sorted(points_copy, key=lambda x: angle(min_point, x))
+    for p in spoints[1:]:
+        print '{0} -> {1}'.format(
+            p,
+            angle(p, min_point)
+        )
     # Now we start iterating over the points, considering them three at a time
     hull = spoints[0:3]
     for p in spoints[3:]:
-        # Find the next point
-        while len(hull) > 1 and cross_product(hull[-2], hull[-1], p) <= 0:
+        # Remove points until turning to p is counter-clockwise
+        while len(hull) > 1 and turn_direction(hull[-2], hull[-1], p) <= 0:
             hull.pop()
-        # Add the point to the hull
-        if hull is None or p != hull[-1]:
-            hull.append(p)
+        hull.append(p)
     return hull
 
 
 def enclosing_triangle(points):
     """
-    Calculate a triangle that encloses a set of points -- note that the triangle may not contain any points in the given set.
+    Calculate a triangle that encloses a set of points -- note the triangle
+    might not contain any of the points in the given set.
 
     Arguments:
     points is a list of Point objects
@@ -659,9 +671,7 @@ def enclosing_triangle(points):
             hull[2]
         )
     # Convert the hull from a list of points to a list of edges
-    edges = []
-    for p in xrange(0, len(hull)):
-        edges.append(LineSegment(hull[p-1], hull[p]))
+    edges = [LineSegment(hull[p-1], hull[p]) for p in xrange(0, len(hull))]
     triangle = None
     # This is not a fast way to do it, but it works and is way easier to
     # implement than the O(n) algorithm
