@@ -534,15 +534,20 @@ def tri_share_vertices(t1, t2):
 
 def angle(a, b):
     """
-    Calculate the angle between two points.
+    Calculate the angle of a line between two points.
 
     Arguments:
     a and b are Point objects
 
     Returns:
-    The angle between a and b in radians (float)
+    The angle of the line through a and b in radians (float)
+    All angles are in [0, 2*pi)
     """
-    a = atan2(a.y - b.y, a.x - b.x)
+    a = atan2(a.y - b.y, a.x - b.x) + pi
+    if a >= 2*pi:
+        a -= 2*pi
+    if a < 0:
+        a += 2*pi
     return a
 
 
@@ -635,11 +640,6 @@ def convex_hull(points):
     points_copy.remove(min_point)
     # Next, sort the points by angle (asc) relative to the minimum point
     spoints = [min_point] + sorted(points_copy, key=lambda x: angle(min_point, x))
-    for p in spoints[1:]:
-        print '{0} -> {1}'.format(
-            p,
-            angle(p, min_point)
-        )
     # Now we start iterating over the points, considering them three at a time
     hull = spoints[0:3]
     for p in spoints[3:]:
