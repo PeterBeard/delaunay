@@ -523,7 +523,6 @@ def tri_share_vertices(t1, t2):
         return True
 
     # Iterate over the vertices in t1 and compare each one to every vertex in t2
-    # TODO: Maybe use sets to speed this up
     for vertex1 in t1:
         for vertex2 in t2:
             if vertex1 == vertex2:
