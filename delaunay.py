@@ -344,6 +344,9 @@ def main():
             print('Unrecognized distribution type.')
             sys.exit(64)
 
+    # Dedup the points
+    points = list(set(points))
+
     # Calculate the triangulation
     triangulation = delaunay_triangulation(points)
 
