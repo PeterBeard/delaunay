@@ -3,7 +3,7 @@ Python script for calculating and drawing triangular meshes. The mesh is the Del
 
 Dependencies
 ------------
-* Uses the Python Imagimg Library (PIL) to read/write image files
+* Uses the Python Imaging Library (PIL) to read/write image files
 
 Usage
 -----
