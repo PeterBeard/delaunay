@@ -40,11 +40,11 @@ def generate_random_points(count, area, scale=1, decluster=True):
         for __ in range(0, n_extra_points)
     ]
 
-    # Add a few boundary points for nicer graph edges
-    points.append(Point(-100, -100))
-    points.append(Point(-100, area[1]+100))
-    points.append(Point(area[0]+100, -100))
-    points.append(Point(area[0]+100, area[1]+100))
+    # Translate the points so that some are in negative x and y for nicer edges
+    dx = (bound_x - area[0]) / 2
+    dy = (bound_y - area[1]) / 2
+
+    points = [Point(p.x - dx, p.y - dy) for p in points]
 
     return points
 
