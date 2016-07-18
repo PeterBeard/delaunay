@@ -31,7 +31,9 @@ Functions:
     tri_circumcircle(tri): find the circumcircle of a triangle
     tri_share_vertices(a, b): determine whether two triangles share any vertices
     angle(a, b): find the angle between two points
-    cross_product(a, b): find the cross product of three points
+    turn_direction(p, q, r): find the turn direction of three points
+    turn_cw(p, q, r): determine whether a turn is clockwise
+    turn_ccw(p, q, r): determine whether a turn is counter-clockwise
     translate_tri(tri, vector): translate a triangle by the given vector
     scale_tri(t, s): scale a triangle by the given scale factor
     convex_hull(p): find the convex hull of a set of points
@@ -40,7 +42,7 @@ Functions:
 """
 from __future__ import division
 from collections import namedtuple
-from math import sqrt, atan2
+from math import sqrt, atan2, pi
 
 
 # A point has an x and a y coordinate
@@ -56,6 +58,17 @@ Triangle = namedtuple('Triangle', 'a b c')
 # A circle is defined by its radius and center
 Circle = namedtuple('Circle', 'center radius')
 
+def distance_sq(p, q):
+    """
+    Find the distance squared between p and q
+
+    Arguments:
+    p and q are Point objects
+
+    Returns:
+    The square of the Euclidean distance between p and q
+    """
+    return (q.x - p.x)**2 + (q.y - p.y)**2
 
 def midpoint(line):
     """
@@ -533,32 +546,62 @@ def tri_share_vertices(t1, t2):
 
 def angle(a, b):
     """
-    Calculate the angle between two points.
+    Calculate the angle of a line between two points.
 
     Arguments:
     a and b are Point objects
 
     Returns:
-    The angle between a and b in radians (float)
+    The angle of the line through a and b in radians (float)
+    All angles are in [0, 2*pi)
     """
-    return atan2(b.y, b.x) - atan2(a.y, a.x)
+    a = atan2(a.y - b.y, a.x - b.x) + pi
+    if a >= 2*pi:
+        a -= 2*pi
+    if a < 0:
+        a += 2*pi
+    return a
 
 
-def cross_product(a, b, c):
+def turn_direction(p, q, r):
     """
-    Calculates the cross product of three points.
-
-    Note that this isn't actually a cross product, but I couldn't think of a
-    better name after I wrote it.
+    Calculates the direction of a turn from p to r via q
 
     Arguments:
-    a, b, and c are all Point objects
+    p, q, and r are all Point objects
 
     Returns:
-    The cross product of a, b, and c (float)
+    Value > 0 if turn is clockwise
+    0 if points are collinear
+    Value < 0 if turn is counter-clockwise
     """
-    return (b.x - a.x)*(c.y - a.y) - (b.y - a.y)*(c.x - a.x)
+    return (q.y - p.y)*(r.x - q.x) - (q.x - p.x)*(r.y - q.y)
 
+
+def turn_cw(p, q, r):
+    """
+    Determine whether a turn from p to r via q is clockwise.
+
+    Arguments:
+    p, q, and r are all Point objects
+
+    Returns:
+    True if the turn is CW and False if not
+    """
+    return turn_direction(p, q, r) > 0
+
+
+def turn_ccw(p, q, r):
+    """
+    Determine whether a turn from p to r via q is counter-clockwise.
+
+    Arguments:
+    p, q, and r are all Point objects
+
+    Returns:
+    True if the turn is CCW and False if not
+    """
+    return turn_direction(p, q, r) < 0
 
 def translate_tri(t, d):
     """
@@ -614,34 +657,42 @@ def convex_hull(points):
     The convex hull as a list of points represented by 2-tuples of x,y
     coordinate pairs, i.e. h = [(x1,y1), (x2,y2), etc].
     """
+    # Less than three points do not a polygon make
+    if len(points) < 3:
+        return None
+    # Three points is the simplest case
+    if len(points) == 3:
+        return points
+
     # Find the point with the lowest y-coordinate
     # If there's a tie, the one with the lowest x-coordinate is chosen
     min_point = points[-1]
     for p in points:
-        if p.y < min_point.y:
-            min_point = p
-        elif p.y == min_point.y and p.x < min_point.x:
+        if p.y < min_point.y or (p.y == min_point.y and p.x < min_point.x):
             min_point = p
 
     points_copy = points[::1]
     points_copy.remove(min_point)
-    # Next, sort the points by angle (asc) relative to the minimum point
-    spoints = [min_point] + sorted(points_copy, key=lambda x: angle(min_point, x))
+
+    # Next, sort the points by angle (desc) and distance (desc) relative to the minimum point
+    spoints = sorted(points_copy, key=lambda x: distance_sq(min_point, x),
+            reverse=True)
+    spoints = [min_point] + sorted(spoints, key=lambda x: angle(min_point, x),
+            reverse=True)
     # Now we start iterating over the points, considering them three at a time
     hull = spoints[0:3]
     for p in spoints[3:]:
-        # Find the next point
-        while len(hull) > 1 and cross_product(hull[-2], hull[-1], p) <= 0:
+        # Remove points until turning to p is counter-clockwise
+        while len(hull) > 1 and turn_ccw(hull[-2], hull[-1], p):
             hull.pop()
-        # Add the point to the hull
-        if hull is None or p != hull[-1]:
-            hull.append(p)
+        hull.append(p)
     return hull
 
 
 def enclosing_triangle(points):
     """
-    Calculate a triangle that encloses a set of points -- note that the triangle may not contain any points in the given set.
+    Calculate a triangle that encloses a set of points -- note the triangle
+    might not contain any of the points in the given set.
 
     Arguments:
     points is a list of Point objects
@@ -659,9 +710,7 @@ def enclosing_triangle(points):
             hull[2]
         )
     # Convert the hull from a list of points to a list of edges
-    edges = []
-    for p in xrange(0, len(hull)):
-        edges.append(LineSegment(hull[p-1], hull[p]))
+    edges = [LineSegment(hull[p-1], hull[p]) for p in xrange(0, len(hull))]
     triangle = None
     # This is not a fast way to do it, but it works and is way easier to
     # implement than the O(n) algorithm
