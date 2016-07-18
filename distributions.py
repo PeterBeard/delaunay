@@ -54,7 +54,7 @@ def generate_rectangular_points(count, area):
     Generate a rectangular grid of points.
 
     Arguments:
-    count is the number of points to generate (int)
+    count is the approximate number of points to generate (int)
     area is a 2-tuple of the maximum x and y values of the field
 
     Returns:
@@ -63,17 +63,18 @@ def generate_rectangular_points(count, area):
     # Reduce the area to lowest terms and calculate grid spacing
     k = gcd(area[0], area[1])
     reduced_x, reduced_y = area[0]/k, area[1]/k
+    aspect = reduced_x / reduced_y
 
-    count_x = ceil(sqrt(count*reduced_x))
-    count_y = ceil(sqrt(count*reduced_y))
+    count_x = ceil(sqrt(count)*aspect)
+    count_y = ceil(sqrt(count)/aspect)
 
     x_spacing = int(max(ceil(area[0]/count_x), 1))
-    y_spacing = int(max(ceil(area[0]/count_y), 1))
+    y_spacing = int(max(ceil(area[1]/count_y), 1))
 
     return [
         Point(x, y)
-        for y in range(0, area[1]+y_spacing)
-        for x in range(0, area[0]+x_spacing)
+        for y in range(0, area[1], y_spacing)
+        for x in range(0, area[0], x_spacing)
     ]
 
 
