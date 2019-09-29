@@ -1,4 +1,5 @@
 # Ignore pyc and swap files
 *.pyc
 *.swp
+*.venv
 .coverage
