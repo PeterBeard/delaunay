@@ -5,6 +5,13 @@ Dependencies
 ------------
 * Uses the Python Imaging Library (PIL) to read/write image files
 
+Installation
+------------
+
+1. Download these files
+2. Create a python virtualenv (optional)
+3. Install the requirements with `pip install -r requirements.txt`
+
 Usage
 -----
 ```
