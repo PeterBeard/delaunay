@@ -152,7 +152,7 @@ def generate_halton_points(count, area, p=2, q=3):
     A list of Point objects
     """
     points = []
-    for i in xrange(1, count+1):
+    for i in range(1, count+1):
         fx = 1
         fy = 1
         ix = i

@@ -710,7 +710,7 @@ def enclosing_triangle(points):
             hull[2]
         )
     # Convert the hull from a list of points to a list of edges
-    edges = [LineSegment(hull[p-1], hull[p]) for p in xrange(0, len(hull))]
+    edges = [LineSegment(hull[p-1], hull[p]) for p in range(0, len(hull))]
     triangle = None
     # This is not a fast way to do it, but it works and is way easier to
     # implement than the O(n) algorithm

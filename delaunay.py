@@ -10,12 +10,6 @@ Try delaunay.py --help for details.
 """
 from __future__ import print_function
 import sys
-
-# Detect python version before continuing
-if sys.version_info[0] == 3:
-    print("delaunay.py only runs on Python 2.x")
-    sys.exit(78)
-
 import argparse
 from PIL import Image, ImageDraw
 from random import randrange
