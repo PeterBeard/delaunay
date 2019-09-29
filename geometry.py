@@ -447,6 +447,9 @@ def tri_circumcenter(t):
     if is_vertical(A):
         ma = 0
     elif is_horizontal(A):
+        if is_horizontal(B):
+            # If both segments are horizontal then we don't have a valid triangle
+            return None
         # Find where B intersects a vertical line through mp_a
         mb = perp_slope(B)
         return line_intersect_vertical(point_slope_to_y_intercept(mb, mp_b), mp_a)
