@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 """
 Use Delaunay triangulations to make interesting images.
 
