@@ -784,7 +784,6 @@ def delaunay_triangulation(points):
     if supertriangle is None:
         return None
     supertriangle = scale_tri(supertriangle, 2)
-
     # The graph is a list of 2-tuples of the form (t, c), where t is a Triangle
     # object and c is its circumcircle. Precalculating the circumcircles saves
     # considerable time later on.
@@ -824,4 +823,12 @@ def delaunay_triangulation(points):
                 graph.append((t, tri_circumcircle(t)))
 
     # Clean up the graph data structure, removing all of the circumcircles
-    return [t[0] for t in graph]
+    nice_graph = (t for t, c in graph)
+
+    # Prune out any triangles that have a vertex in common with the supertriangle
+    pruned_graph = filter(
+        lambda t: not (t.a in supertriangle or t.b in supertriangle or t.c in supertriangle),
+        nice_graph
+    )
+    return list(pruned_graph)
+
