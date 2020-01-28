@@ -78,7 +78,7 @@ class TestCircleTuple(unittest.TestCase):
         c = Circle(0, 1)
 
         self.assertEqual(c.center, 0)
-        self.assertEqual(c.radius, 1)
+        self.assertEqual(c.radius_squared, 1)
 
     # Test one value
     def test_one_value(self):
@@ -582,7 +582,7 @@ class TestTriCircumcenter(unittest.TestCase):
         tri = Triangle(Point(0, 0), Point(1, 0), Point(2, 0))
         circle = tri_circumcircle(tri)
         self.assertEqual(circle.center, Point(1, 0))
-        self.assertEqual(circle.radius, 1.0)
+        self.assertEqual(circle.radius_squared, 1.0)
 
 
 class TestTriCentroid(unittest.TestCase):
@@ -603,13 +603,13 @@ class TestTriCircumcircle(unittest.TestCase):
         vert2 = Point(1, -1*root3/3)
         vert3 = Point(0, 2*root3/3)
 
-        ref_circle = Circle(Point(0, 0), 1.1547005384)
+        ref_circle = Circle(Point(0, 0), 4.0/3.0)
 
         circle = tri_circumcircle(Triangle(vert1, vert2, vert3))
 
         self.assertAlmostEqual(ref_circle.center.x, circle.center.x)
         self.assertAlmostEqual(ref_circle.center.y, circle.center.y)
-        self.assertAlmostEqual(ref_circle.radius, circle.radius)
+        self.assertAlmostEqual(ref_circle.radius_squared, circle.radius_squared)
 
 
 class TestTriShareVertices(unittest.TestCase):

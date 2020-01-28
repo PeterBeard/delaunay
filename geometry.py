@@ -8,7 +8,7 @@ Types:
     LineSegment: line segment by its start and end points
     Line: line defined by its slope and y-intercept
     Triangle: triangle defined by its three edges or vertices
-    Circle: circle defined by its center point and radius
+    Circle: circle defined by its center point and radius squared
 
 Functions:
     midpoint(line): find the midpoint of a line segment
@@ -40,7 +40,6 @@ Functions:
     enclosing_triangle(p): find a triangle enclosing a set of points
     delaunay_triangulation(p): find the Delaunay triangulation of the points p
 """
-from __future__ import division
 from collections import namedtuple
 from math import sqrt, atan2, pi
 
@@ -55,8 +54,8 @@ LineSegment = namedtuple('LineSegment', 'start end')
 Line = namedtuple('Line', 'slope yintercept')
 # A triangle can be defined by either three edges or points
 Triangle = namedtuple('Triangle', 'a b c')
-# A circle is defined by its radius and center
-Circle = namedtuple('Circle', 'center radius')
+# A circle is defined by its squared radius and center (we use r^2 for speed)
+Circle = namedtuple('Circle', 'center radius_squared')
 
 def distance_sq(p, q):
     """
@@ -507,21 +506,21 @@ def tri_circumcircle(t):
     if center is None:
         # Points might be collinear
         if is_collinear(t[0], t[1], t[2]):
-            min_x = min([v.x for v in t])
-            min_y = min([v.y for v in t])
-            max_x = max([v.x for v in t])
-            max_y = max([v.y for v in t])
+            min_x = min(v.x for v in t)
+            min_y = min(v.y for v in t)
+            max_x = max(v.x for v in t)
+            max_y = max(v.y for v in t)
 
             center = Point((max_x - min_x)/2, (max_y - min_y)/2)
-            radius = sqrt((center.x - max_x)**2 + (center.y - max_y)**2)
-            return Circle(center, radius)
+            radius_squared = (center.x - max_x)**2 + (center.y - max_y)**2
+            return Circle(center, radius_squared)
         else:
             return None
     else:
-        # Get the distance from the center to a vertex
-        radius = sqrt((center.x - t.a.x)**2 + (center.y - t.a.y)**2)
+        # Get the distance squared from the center to any vertex
+        radius_squared = (center.x - t.a.x)**2 + (center.y - t.a.y)**2
 
-    return Circle(center, radius)
+    return Circle(center, radius_squared)
 
 
 def tri_share_vertices(t1, t2):
@@ -787,17 +786,17 @@ def delaunay_triangulation(points):
     # The graph is a list of 2-tuples of the form (t, c), where t is a Triangle
     # object and c is its circumcircle. Precalculating the circumcircles saves
     # considerable time later on.
-    graph = [(supertriangle, tri_circumcircle(supertriangle))]
+    graph = {(supertriangle, tri_circumcircle(supertriangle))}
 
     # Add points to the graph one at a time
     for p in points:
         # Find the triangles that contain the point
         invalid_triangles_vertices = []
         invalid_triangles_edges = []
-        for (t, circumcircle) in graph:
-            if sqrt((circumcircle.center.x-p.x)**2+(circumcircle.center.y-p.y)**2) <= circumcircle.radius:
+        for t, circumcircle in graph:
+            if (circumcircle.center.x-p.x)**2+(circumcircle.center.y-p.y)**2 <= circumcircle.radius_squared:
                 invalid_triangles_edges.append(vertices_to_edges(t))
-                invalid_triangles_vertices.append((t, circumcircle))               # Keep the circumcircle so we can remove the item later
+                invalid_triangles_vertices.append((t, circumcircle))  # Keep the circumcircle so we can remove the item later
         # There is a polygonal hole around the new point. Find its edges
         hole = []
         for t in invalid_triangles_edges:
