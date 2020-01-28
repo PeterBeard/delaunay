@@ -668,18 +668,14 @@ def convex_hull(points):
 
     # Find the point with the lowest y-coordinate
     # If there's a tie, the one with the lowest x-coordinate is chosen
-    min_point = points[-1]
-    for p in points:
-        if p.y < min_point.y or (p.y == min_point.y and p.x < min_point.x):
-            min_point = p
+    points_set = set(points)
+    min_point = min(points_set, key=lambda p: tuple(reversed(p)))
 
-    points_copy = points[::1]
-    points_copy.remove(min_point)
+    # Remove the minimum point
+    points_set.remove(min_point)
 
     # Next, sort the points by angle (desc) and distance (desc) relative to the minimum point
-    spoints = sorted(points_copy, key=lambda x: distance_sq(min_point, x),
-            reverse=True)
-    spoints = [min_point] + sorted(spoints, key=lambda x: angle(min_point, x),
+    spoints = [min_point] + sorted(points_set, key=lambda x: angle(min_point, x),
             reverse=True)
     # Now we start iterating over the points, considering them three at a time
     hull = spoints[0:3]
@@ -817,17 +813,14 @@ def delaunay_triangulation(points):
 
         # Re-triangulate the hole made by the new point
         for e in hole:
-            if e[0] != p and e[1] != p:
+            if p not in e:
                 t = triangle_from_edge_point(e, p)
-                graph.append((t, tri_circumcircle(t)))
+                graph.add((t, tri_circumcircle(t)))
 
-    # Clean up the graph data structure, removing all of the circumcircles
-    nice_graph = (t for t, c in graph)
-
-    # Prune out any triangles that have a vertex in common with the supertriangle
+    # Prune out any triangles that have a vertex in common with the supertriangle and remove the extra circumcircle info
     pruned_graph = filter(
         lambda t: not (t.a in supertriangle or t.b in supertriangle or t.c in supertriangle),
-        nice_graph
+        (t for t, _ in graph)
     )
     return list(pruned_graph)
 
