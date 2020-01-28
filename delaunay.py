@@ -9,10 +9,10 @@ usage: delaunay.py [-h] [-o OUTPUT_FILENAME] [-n N_POINTS] [-x WIDTH]
 Try delaunay.py --help for details.
 """
 from __future__ import print_function
+import random
 import sys
 import argparse
 from PIL import Image, ImageDraw
-from random import randrange
 from collections import namedtuple
 from math import sqrt
 from geometry import delaunay_triangulation, tri_centroid, Point, Triangle
@@ -282,12 +282,17 @@ def main():
     parser.add_argument('-d', '--decluster', dest='decluster', action='store_true', help='If enabled, try to avoid generating clusters of points in the triangulation. This will significantly slow down point generation.')
     parser.add_argument('-r', '--right', dest='right_tris', action='store_true', help='If enabled, generate right triangles rather than random ones.')
     parser.add_argument('-e', '--equilateral', dest='equilateral_tris', action='store_true', help='If enabled, generate equilateral triangles rather than random ones.')
+    parser.add_argument('--seed', dest='seed', type=int, help='The seed to use for the RNG')
 
     # Parse the arguments
     options = parser.parse_args()
 
     # Set the number of points to use
     npoints = options.n_points
+
+    # Use the given seed
+    if options.seed:
+        random.seed(options.seed)
 
     # Make sure the gradient name exists (if applicable)
     gname = options.gradient
@@ -362,7 +367,7 @@ def main():
     if options.darken_amount:
         for i in range(0, len(colors)):
             c = colors[i]
-            d = randrange(options.darken_amount)
+            d = random.randrange(options.darken_amount)
             darkened = Color(max(c.r-d, 0), max(c.g-d, 0), max(c.b-d, 0))
             colors[i] = darkened
 
