@@ -5,8 +5,7 @@ All functions return a list of Point objects.
 """
 from __future__ import division
 from random import randrange
-from math import ceil, sqrt
-from fractions import gcd
+from math import ceil, sqrt, gcd
 from geometry import Point
 
 
