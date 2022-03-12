@@ -14,9 +14,10 @@ import sys
 import argparse
 from PIL import Image, ImageDraw
 from collections import namedtuple
-from math import sqrt
-from geometry import delaunay_triangulation, tri_centroid, Point, Triangle
+
+from algorithms.bowyer_watson import triangulate
 from distributions import *
+from geometry import tri_centroid, Triangle
 
 # Some types to make things a little easier
 Color = namedtuple('Color', 'r g b')
@@ -347,7 +348,7 @@ def main():
     points = list(set(points))
 
     # Calculate the triangulation
-    triangulation = delaunay_triangulation(points)
+    triangulation = triangulate(points)
 
     # Failed to find a triangulation
     if not triangulation:
