@@ -49,3 +49,14 @@ Options:
   -e, --equilateral     If enabled, generate equilateral triangles rather than
                         random ones.
 ```
+
+Testing
+-------
+
+To run the test suite, just run
+
+```
+python3 -m unittest
+```
+
+in the base directory.
