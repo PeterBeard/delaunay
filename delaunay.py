@@ -412,7 +412,7 @@ def main():
     # Resample the image using the built-in Lanczos filter
     if options.antialias:
         size = (int(size[0]/aa_amount), int(size[1]/aa_amount))
-        image = image.resize(size, Image.ANTIALIAS)
+        image = image.resize(size, Image.Resampling.LANCZOS)
 
     # Write the image to a file
     image.save(options.output_filename)
