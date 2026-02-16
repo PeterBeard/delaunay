@@ -303,6 +303,9 @@ def main():
     elif gname not in gradient and not options.input_filename:
         print('Invalid gradient name')
         sys.exit(64)
+    elif gname and (not options.width or not options.height):
+        print('Gradient requires image dimensions (-x and -y)')
+        sys.exit(64)
     elif options.input_filename:
         # Warn if a gradient was selected as well as an image
         if options.gradient:
